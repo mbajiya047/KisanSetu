@@ -22,6 +22,7 @@ interface AuthContextType {
   isLoading: boolean;
   loginWithPhoneAndOtp: (phone: string, otp: string) => Promise<{ isNewUser: boolean }>;
   loginAsDemoRole: (role: UserRole) => Promise<void>;
+  setAuthSession: (token: string, user: UserProfile) => void;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -55,12 +56,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // If no token, auto log in as Demo Farmer for instant zero-friction experience!
     const savedToken = localStorage.getItem('kisansetu_token');
-    if (!savedToken) {
-      loginAsDemoRole('FARMER').catch(() => setIsLoading(false));
-    } else {
+    if (savedToken) {
       refreshUser();
+    } else {
+      setIsLoading(false);
     }
   }, []);
 
@@ -96,6 +96,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const setAuthSession = (newToken: string, newUser: UserProfile) => {
+    localStorage.setItem('kisansetu_token', newToken);
+    setToken(newToken);
+    setUser(newUser);
+  };
+
   const logout = () => {
     localStorage.removeItem('kisansetu_token');
     setToken(null);
@@ -111,6 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         loginWithPhoneAndOtp,
         loginAsDemoRole,
+        setAuthSession,
         logout,
         refreshUser,
       }}

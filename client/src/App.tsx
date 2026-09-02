@@ -58,13 +58,14 @@ export const AppContent: React.FC = () => {
       <Header />
       <main className="flex-1">
         <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<HomePage />} />
+          {/* Default Opening Route: LoginPage */}
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/home" element={<HomePage />} />
           <Route path="/states" element={<StatesPage />} />
           <Route path="/centers" element={<CentersPage />} />
           <Route path="/mandi-status" element={<MandiStatusPage />} />
           <Route path="/help" element={<HelpPage />} />
-          <Route path="/login" element={<LoginPage />} />
 
           {/* Farmer Routes */}
           <Route path="/farmer/register" element={<FarmerRegisterPage />} />

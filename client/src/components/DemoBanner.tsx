@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import type { UserRole } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Sparkles, User, Shield, Building2, MapPin, CheckCircle2 } from 'lucide-react';
+import { Sparkles, User, Shield, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const DemoBanner: React.FC = () => {
@@ -13,8 +13,6 @@ export const DemoBanner: React.FC = () => {
   const roles: { role: UserRole; labelEn: string; labelHi: string; icon: any; route: string }[] = [
     { role: 'FARMER', labelEn: 'Farmer (Ramesh Kumar)', labelHi: 'किसान (रमेश कुमार)', icon: User, route: '/farmer/dashboard' },
     { role: 'MANDI_OFFICER', labelEn: 'Mandi Officer (Sonipat)', labelHi: 'मंडी अधिकारी (सोनीपत)', icon: Shield, route: '/officer/dashboard' },
-    { role: 'DISTRICT_ADMIN', labelEn: 'District Admin', labelHi: 'जिला प्रशासन', icon: MapPin, route: '/district-admin' },
-    { role: 'STATE_ADMIN', labelEn: 'State Admin (Haryana)', labelHi: 'राज्य प्रशासन (हरियाणा)', icon: Building2, route: '/state-admin' },
     { role: 'SUPER_ADMIN', labelEn: 'Super Admin (India)', labelHi: 'राष्ट्रीय सुपर एडमिन', icon: Sparkles, route: '/admin' },
   ];
 
@@ -47,15 +45,15 @@ export const DemoBanner: React.FC = () => {
             <button
               key={r.role}
               onClick={() => handleSwitch(r)}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 isActive
-                  ? 'bg-emerald-600 text-white font-semibold shadow-sm ring-1 ring-emerald-400'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+                  ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-400 font-bold'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700'
               }`}
             >
-              <Icon className="w-3 h-3" />
+              <Icon className="w-3.5 h-3.5" />
               <span>{language === 'hi' ? r.labelHi : r.labelEn}</span>
-              {isActive && <CheckCircle2 className="w-3 h-3 ml-0.5 text-emerald-200" />}
+              {isActive && <CheckCircle2 className="w-3.5 h-3.5 ml-0.5 text-emerald-200" />}
             </button>
           );
         })}

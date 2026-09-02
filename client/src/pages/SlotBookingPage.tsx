@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
@@ -41,6 +41,7 @@ export const SlotBookingPage: React.FC = () => {
   const [generatedBooking, setGeneratedBooking] = useState<any | null>(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [enamSyncInfo, setEnamSyncInfo] = useState<any | null>(null);
 
   // Load Centers
   useEffect(() => {
@@ -54,7 +55,7 @@ export const SlotBookingPage: React.FC = () => {
     });
   }, []);
 
-  // Load Available Slots when Center or Date changes
+  // Load Available Slots and e-NAM Sync when Center or Date changes
   useEffect(() => {
     if (selectedCenterId) {
       api.getAvailableSlots(selectedCenterId, selectedCrop, selectedDate).then((res) => {
@@ -66,6 +67,12 @@ export const SlotBookingPage: React.FC = () => {
           }
         }
       });
+
+      api.getEnamMandiSlots(selectedCenterId).then((res) => {
+        if (res.success) {
+          setEnamSyncInfo(res);
+        }
+      }).catch(() => null);
     }
   }, [selectedCenterId, selectedDate, selectedCrop]);
 
@@ -149,7 +156,7 @@ export const SlotBookingPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Stepper Progress */}
+      {/* Stepper Progress (Click only to go BACK to previous steps, NOT forward) */}
       <div className="card p-4 bg-white border border-slate-200 shadow-sm flex items-center justify-between">
         {[
           { num: 1, label: t.bookingStep1, icon: Wheat },
@@ -160,27 +167,44 @@ export const SlotBookingPage: React.FC = () => {
           const Icon = s.icon;
           const isActive = step === s.num;
           const isDone = step > s.num;
+          const canGoBack = s.num < step;
+
           return (
-            <div key={s.num} className="flex items-center gap-2">
+            <button
+              key={s.num}
+              type="button"
+              disabled={!canGoBack}
+              onClick={() => {
+                if (canGoBack) setStep(s.num);
+              }}
+              title={canGoBack ? `Go back to Step ${s.num}: ${s.label}` : `Step ${s.num}: ${s.label}`}
+              className={`flex items-center gap-2 transition-all focus:outline-none ${
+                canGoBack ? 'cursor-pointer group' : 'cursor-default'
+              }`}
+            >
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
                   isActive
-                    ? 'bg-agri-700 text-white shadow-md'
+                    ? 'bg-agri-700 text-white shadow-md ring-2 ring-agri-400'
                     : isDone
-                    ? 'bg-emerald-100 text-emerald-800'
+                    ? 'bg-emerald-100 text-emerald-800 group-hover:bg-emerald-200 group-hover:scale-105'
                     : 'bg-slate-100 text-slate-400'
                 }`}
               >
                 {isDone ? '✓' : s.num}
               </div>
               <span
-                className={`text-xs font-semibold hidden md:inline ${
-                  isActive ? 'text-agri-900 font-bold' : 'text-slate-500'
+                className={`text-xs font-semibold hidden md:inline transition-colors ${
+                  isActive
+                    ? 'text-agri-900 font-bold'
+                    : isDone
+                    ? 'text-slate-700 group-hover:text-emerald-800 font-medium'
+                    : 'text-slate-400'
                 }`}
               >
                 {s.label}
               </span>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -232,11 +256,11 @@ export const SlotBookingPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="pt-4 flex justify-end">
+            <div className="pt-4 flex justify-end border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="btn-primary py-3 px-8 text-xs font-bold flex items-center gap-1.5"
+                className="btn-primary py-3 px-8 text-xs font-bold flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 shadow-md"
               >
                 <span>Select Procurement Center</span>
                 <ArrowRight className="w-4 h-4" />
@@ -279,20 +303,20 @@ export const SlotBookingPage: React.FC = () => {
               })}
             </div>
 
-            <div className="pt-4 flex justify-between">
+            <div className="pt-4 flex items-center justify-between border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="btn-secondary py-2.5 px-4 text-xs font-semibold flex items-center gap-1.5"
+                className="btn-secondary py-2.5 px-4 text-xs font-semibold flex items-center gap-1.5 text-slate-700 hover:bg-slate-100"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back</span>
+                <span>{language === 'hi' ? '← वापस (1. फसल व मात्रा)' : '← Back (1. Crop & Qty)'}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setStep(3)}
-                className="btn-primary py-3 px-8 text-xs font-bold flex items-center gap-1.5"
+                className="btn-primary py-3 px-8 text-xs font-bold flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 shadow-md"
               >
                 <span>Select Date & Time Slot</span>
                 <ArrowRight className="w-4 h-4" />
@@ -337,6 +361,47 @@ export const SlotBookingPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Central e-NAM Gateway Live Quota Meter */}
+            {enamSyncInfo && (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-850 text-white border border-slate-700 shadow-md space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2 w-2 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <strong className="text-emerald-400 font-bold">
+                      Central e-NAM Gateway Synchronized (enam.gov.in)
+                    </strong>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    Mandi ID: {enamSyncInfo.mandi.enamMandiId} • Gate Quota Reconciled
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+                  <div className="p-2 rounded-xl bg-slate-800/80">
+                    <span className="text-[10px] text-slate-400 block">Total Quota</span>
+                    <strong className="text-sm font-bold text-white font-mono">
+                      {enamSyncInfo.reconciliationMetrics.dailyQuotaFarmers} Farmers
+                    </strong>
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-800/80">
+                    <span className="text-[10px] text-sky-400 block">Booked (e-NAM + App)</span>
+                    <strong className="text-sm font-bold text-sky-300 font-mono">
+                      {enamSyncInfo.reconciliationMetrics.totalBookedFarmers} Booked
+                    </strong>
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-800/80 border border-emerald-500/30">
+                    <span className="text-[10px] text-emerald-400 block">Available Now</span>
+                    <strong className="text-sm font-bold text-emerald-400 font-mono">
+                      {enamSyncInfo.reconciliationMetrics.availableRemainingSlots} Free
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Time Slot Cards */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-2">
@@ -377,20 +442,20 @@ export const SlotBookingPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="pt-4 flex justify-between">
+            <div className="pt-4 flex items-center justify-between border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="btn-secondary py-2.5 px-4 text-xs font-semibold flex items-center gap-1.5"
+                className="btn-secondary py-2.5 px-4 text-xs font-semibold flex items-center gap-1.5 text-slate-700 hover:bg-slate-100"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back</span>
+                <span>{language === 'hi' ? '← वापस (2. खरीद केंद्र)' : '← Back (2. Mandi Center)'}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setStep(4)}
-                className="btn-primary py-3 px-8 text-xs font-bold flex items-center gap-1.5"
+                className="btn-primary py-3 px-8 text-xs font-bold flex items-center gap-1.5 bg-emerald-700 hover:bg-emerald-800 shadow-md"
               >
                 <span>Review & Confirm</span>
                 <ArrowRight className="w-4 h-4" />
@@ -462,14 +527,14 @@ export const SlotBookingPage: React.FC = () => {
               </span>
             </div>
 
-            <div className="pt-4 flex justify-between">
+            <div className="pt-4 flex items-center justify-between border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setStep(3)}
-                className="btn-secondary py-2.5 px-4 text-xs font-semibold flex items-center gap-1.5"
+                className="btn-secondary py-2.5 px-4 text-xs font-semibold flex items-center gap-1.5 text-slate-700 hover:bg-slate-100"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back</span>
+                <span>{language === 'hi' ? '← वापस (3. समय स्लॉट)' : '← Back (3. Time Slot)'}</span>
               </button>
 
               <button

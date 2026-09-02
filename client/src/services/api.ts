@@ -58,6 +58,13 @@ class ApiClient {
     });
   }
 
+  officialLogin(email: string, password: string) {
+    return this.request<{ success: boolean; token: string; user: any; message: string }>('/auth/official-login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
   getMe() {
     return this.request<{ success: boolean; user: any }>('/auth/me');
   }
@@ -73,6 +80,13 @@ class ApiClient {
 
   registerFarmer(payload: any) {
     return this.request<{ success: boolean; farmer: any; message: string }>('/farmer/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  registerFarmerSimplified(payload: { fullName: string; phone: string; dob: string; email?: string; stateId?: string; districtId?: string }) {
+    return this.request<{ success: boolean; token: string; user: any; message: string }>('/auth/farmer-register', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
@@ -220,9 +234,32 @@ class ApiClient {
     });
   }
 
-  // Admin
+  // Super Admin
   getSuperAdminAnalytics() {
     return this.request<{ success: boolean; nationalMetrics: any; stateAnalytics: any[]; recentAuditLogs: any[] }>('/admin/analytics');
+  }
+
+  getGovernmentMandiRoster() {
+    return this.request<{ success: boolean; totalMandis: number; accessLevel: string; mandis: any[] }>('/admin/centers/government-roster');
+  }
+
+  addProcurementCenter(data: any) {
+    return this.request<{ success: boolean; message: string; center: any }>('/admin/centers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  deleteProcurementCenter(centerId: string) {
+    return this.request<{ success: boolean; message: string }>(`/admin/centers/${centerId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  toggleMandiStatus(centerId: string) {
+    return this.request<{ success: boolean; message: string; isOperational: boolean }>(`/admin/centers/${centerId}/toggle-status`, {
+      method: 'PATCH',
+    });
   }
 
   getDistrictAdminAnalytics(districtId = 'dist-hr-sonipat') {
@@ -255,6 +292,32 @@ class ApiClient {
       weather: any;
       lastUpdated: string;
     }>(`/open-data/weather-search?query=${encodeURIComponent(query)}`);
+  }
+
+  // Central e-NAM (https://enam.gov.in) Live Sync & Slot Reconciliation
+  getEnamNetworkStatus() {
+    return this.request<{
+      success: boolean;
+      gateway: string;
+      portalUrl: string;
+      syncStatus: string;
+      pulseIntervalSeconds: number;
+      latencyMs: number;
+      networkMetrics: any;
+      lastHeartbeat: string;
+    }>('/open-data/enam/network-status');
+  }
+
+  getEnamMandiSlots(centerId: string) {
+    return this.request<{
+      success: boolean;
+      mandi: any;
+      date: string;
+      reconciliationMetrics: any;
+      timeSlots: any[];
+      recentEnamLots: any[];
+      syncMeta: any;
+    }>(`/open-data/enam/slots/${centerId}`);
   }
 }
 
