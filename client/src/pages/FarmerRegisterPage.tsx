@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { api } from '../services/api';
+import { api, DEFAULT_STATES_DATA } from '../services/api';
 import confetti from 'canvas-confetti';
 import {
   User,
@@ -23,8 +23,8 @@ export const FarmerRegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [states, setStates] = useState<any[]>([]);
-  const [districts, setDistricts] = useState<any[]>([]);
+  const [states, setStates] = useState<any[]>(() => Object.values(DEFAULT_STATES_DATA));
+  const [districts, setDistricts] = useState<any[]>(() => DEFAULT_STATES_DATA['state-rj']?.districts || []);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -37,7 +37,7 @@ export const FarmerRegisterPage: React.FC = () => {
   const [formData, setFormData] = useState({
     fullName: '',
     phone: searchParams.get('phone') || '',
-    dob: '1985-06-15',
+    dob: '2000-01-01',
     email: '',
     stateId: 'state-rj',
     districtId: 'dist-rj-nagaur',
@@ -45,23 +45,29 @@ export const FarmerRegisterPage: React.FC = () => {
 
   useEffect(() => {
     api.getStates().then((res) => {
-      if (res.success && res.states) {
+      if (res.success && res.states && res.states.length > 0) {
         setStates(res.states);
       }
-    }).catch(console.error);
+    }).catch(console.warn);
   }, []);
 
   useEffect(() => {
-    if (formData.stateId) {
-      api.getStateDetails(formData.stateId).then((res) => {
-        if (res.success && res.state?.districts) {
-          setDistricts(res.state.districts);
-          if (res.state.districts.length > 0) {
-            setFormData((prev) => ({ ...prev, districtId: res.state.districts[0].id }));
-          }
-        }
-      }).catch(console.error);
+    // Instantly populate districts from pre-loaded catalog
+    const fallbackList = DEFAULT_STATES_DATA[formData.stateId]?.districts || DEFAULT_STATES_DATA['state-rj']?.districts || [];
+    setDistricts(fallbackList);
+    if (!fallbackList.some((d) => d.id === formData.districtId)) {
+      setFormData((prev) => ({ ...prev, districtId: fallbackList[0]?.id || '' }));
     }
+
+    // Live update if server available
+    api.getStateDetails(formData.stateId).then((res) => {
+      if (res.success && res.state?.districts && res.state.districts.length > 0) {
+        setDistricts(res.state.districts);
+        if (!res.state.districts.some((d: any) => d.id === formData.districtId)) {
+          setFormData((prev) => ({ ...prev, districtId: res.state.districts[0].id }));
+        }
+      }
+    }).catch(console.warn);
   }, [formData.stateId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -221,7 +227,7 @@ export const FarmerRegisterPage: React.FC = () => {
                 <select
                   value={formData.stateId}
                   onChange={(e) => setFormData({ ...formData, stateId: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold text-slate-800 text-xs focus:ring-2 focus:ring-agri-600 focus:outline-none"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold text-slate-800 text-xs focus:ring-2 focus:ring-agri-600 focus:outline-none bg-white cursor-pointer shadow-sm"
                   required
                 >
                   <option value="state-rj">Rajasthan (राजस्थान)</option>
@@ -241,7 +247,7 @@ export const FarmerRegisterPage: React.FC = () => {
                 <select
                   value={formData.districtId}
                   onChange={(e) => setFormData({ ...formData, districtId: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold text-slate-800 text-xs focus:ring-2 focus:ring-agri-600 focus:outline-none"
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-semibold text-slate-800 text-xs focus:ring-2 focus:ring-agri-600 focus:outline-none bg-white cursor-pointer shadow-sm"
                   required
                 >
                   {districts.map((d) => (
