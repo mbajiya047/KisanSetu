@@ -1,0 +1,288 @@
+// KisanSetu Unified Agricultural Procurement & Queue Management Platform
+// SIH 2026 Problem Statement ID 26032
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  phone         String    @unique
+  name          String
+  email         String?
+  role          String    @default("FARMER") // FARMER, MANDI_OFFICER, DISTRICT_ADMIN, STATE_ADMIN, SUPER_ADMIN
+  stateId       String?
+  districtId    String?
+  centerId      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  farmer        Farmer?
+  state         State?    @relation(fields: [stateId], references: [id])
+  district      District? @relation(fields: [districtId], references: [id])
+  center        ProcurementCenter? @relation(fields: [centerId], references: [id])
+  notifications Notification[]
+  auditLogs     AuditLog[]
+}
+
+model Farmer {
+  id                   String        @id @default(cuid())
+  userId               String        @unique
+  farmerId             String        @unique // e.g. FARM-HR-2026-8819
+  fullName             String
+  fatherName           String?
+  phone                String
+  stateId              String
+  districtId           String
+  village              String
+  totalLandAcres       Float         @default(0)
+  khasraNumber         String?
+  bankName             String?
+  accountNumberMasked  String?
+  ifscCode             String?
+  isVerified           Boolean       @default(true)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  user                 User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  state                State         @relation(fields: [stateId], references: [id])
+  district             District      @relation(fields: [districtId], references: [id])
+  crops                FarmerCrop[]
+  bookings             Booking[]
+  notifications        Notification[]
+}
+
+model State {
+  id            String              @id @default(cuid())
+  name          String              @unique
+  hindiName     String
+  code          String              @unique
+  region        String
+  capital       String
+  isActive      Boolean             @default(true)
+
+  districts     District[]
+  centers       ProcurementCenter[]
+  config        StateConfig?
+  farmers       Farmer[]
+  users         User[]
+}
+
+model District {
+  id            String              @id @default(cuid())
+  stateId       String
+  name          String
+  hindiName     String
+  code          String
+  isActive      Boolean             @default(true)
+
+  state         State               @relation(fields: [stateId], references: [id], onDelete: Cascade)
+  centers       ProcurementCenter[]
+  farmers       Farmer[]
+  users         User[]
+}
+
+model ProcurementCenter {
+  id                   String       @id @default(cuid())
+  name                 String
+  hindiName            String
+  code                 String       @unique
+  stateId              String
+  districtId           String
+  address              String
+  latitude             Float
+  longitude            Float
+  contactNumber        String
+  officerInCharge      String
+  dailyCapacityQuintals Float       @default(5000)
+  maxDailyFarmers      Int          @default(150)
+  activeGates          Int          @default(3)
+  isOperational        Boolean      @default(true)
+  currentWaitMinutes   Int          @default(35)
+  openTime             String       @default("08:00 AM")
+  closeTime            String       @default("06:00 PM")
+
+  state                State        @relation(fields: [stateId], references: [id])
+  district             District     @relation(fields: [districtId], references: [id])
+  slots                Slot[]
+  bookings             Booking[]
+  queueEntries         QueueEntry[]
+  users                User[]
+}
+
+model Crop {
+  id                     String       @id @default(cuid())
+  name                   String       @unique
+  hindiName              String
+  category               String       // RABI, KHARIF, ZAID
+  mspRatePerQuintal      Float
+  unit                   String       @default("Quintal")
+  moistureStandardPercent Float       @default(12.0)
+  iconName               String       @default("Wheat")
+
+  farmerCrops            FarmerCrop[]
+  slots                  Slot[]
+  bookings               Booking[]
+}
+
+model StateConfig {
+  id                         String   @id @default(cuid())
+  stateId                    String   @unique
+  procurementMode            String   @default("CENTRALIZED") // CENTRALIZED, HYBRID, DECENTRALIZED
+  slotBookingEnabled         Boolean  @default(true)
+  slotDurationMinutes        Int      @default(60) // 30, 45, 60
+  dailyCapacityLimitQuintals  Float    @default(50000)
+  workingDays                String   @default("Monday,Tuesday,Wednesday,Thursday,Friday,Saturday")
+  requiredDocuments          String   @default("[\"Aadhaar Card\",\"Land Record / Farad\",\"Bank Passbook\"]")
+  supportedCrops             String   @default("[\"Wheat\",\"Paddy\",\"Mustard\",\"Bajra\"]")
+  notificationChannels       String   @default("[\"SMS\",\"WhatsApp\",\"Push\",\"App\"]")
+  procurementWorkflow        String   @default("[\"Gate Entry\",\"Weighing Bridge\",\"Quality Inspection\",\"J-Form Issuance\",\"DBT Payment\"]")
+  maxAdvanceBookingDays      Int      @default(7)
+  emergencySlotQuotaPercent  Int      @default(10)
+  seasonName                 String   @default("Kharif 2026 / Rabi 2026-27")
+  seasonStartDate            String   @default("2026-09-01")
+  seasonEndDate              String   @default("2026-11-30")
+  updatedAt                  DateTime @updatedAt
+
+  state                      State    @relation(fields: [stateId], references: [id], onDelete: Cascade)
+}
+
+model FarmerCrop {
+  id                     String   @id @default(cuid())
+  farmerId               String
+  cropId                 String
+  cultivatedAreaAcres    Float
+  estimatedYieldQuintals Float
+  season                 String
+  year                   Int      @default(2026)
+
+  farmer                 Farmer   @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  crop                   Crop     @relation(fields: [cropId], references: [id])
+}
+
+model Slot {
+  id                String            @id @default(cuid())
+  centerId          String
+  cropId            String
+  date              String            // YYYY-MM-DD
+  startTime         String            // e.g. "09:00 AM"
+  endTime           String            // e.g. "10:00 AM"
+  capacityQuintals  Float             @default(500)
+  maxFarmers        Int               @default(20)
+  bookedFarmers     Int               @default(0)
+  status            String            @default("AVAILABLE") // AVAILABLE, FEW_SLOTS, FULL, CANCELLED
+
+  center            ProcurementCenter @relation(fields: [centerId], references: [id])
+  crop              Crop              @relation(fields: [cropId], references: [id])
+  bookings          Booking[]
+}
+
+model Booking {
+  id                     String             @id @default(cuid())
+  bookingToken           String             @unique // e.g. WHT-4921
+  qrCodeData             String
+  farmerId               String
+  centerId               String
+  slotId                 String
+  cropId                 String
+  bookedQuantityQuintals Float
+  vehicleNumber          String?
+  vehicleType            String             @default("Tractor-Trolley")
+  status                 String             @default("BOOKED") // BOOKED, ARRIVED, WEIGHING, QUALITY_CHECK, PROCURED, COMPLETED, CANCELLED, NO_SHOW
+  scheduledDate          String
+  scheduledTime          String
+  bookedAt               DateTime           @default(now())
+
+  farmer                 Farmer             @relation(fields: [farmerId], references: [id])
+  center                 ProcurementCenter  @relation(fields: [centerId], references: [id])
+  slot                   Slot               @relation(fields: [slotId], references: [id])
+  crop                   Crop               @relation(fields: [cropId], references: [id])
+  queueEntry             QueueEntry?
+  procurementRecord      ProcurementRecord?
+}
+
+model QueueEntry {
+  id                String            @id @default(cuid())
+  centerId          String
+  bookingId         String            @unique
+  tokenNumber       String
+  queuePosition     Int
+  stage             String            @default("WAITING") // WAITING, ARRIVED, WEIGHING, QUALITY_CHECK, COMPLETED, NO_SHOW
+  gateNumber        String            @default("Gate 1")
+  estimatedCallTime String?
+  actualEntryTime   DateTime?
+  completedTime     DateTime?
+
+  center            ProcurementCenter @relation(fields: [centerId], references: [id])
+  booking           Booking           @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model ProcurementRecord {
+  id                     String        @id @default(cuid())
+  bookingId              String        @unique
+  grossWeightQuintals    Float
+  tareWeightQuintals     Float
+  netWeightQuintals      Float
+  moisturePercent        Float         @default(11.2)
+  foreignMatterPercent   Float         @default(0.5)
+  qualityGrade           String        @default("GRADE_A") // GRADE_A, FAQ_STANDARD, REJECTED
+  agreedRatePerQuintal   Float
+  grossAmount            Float
+  deductionAmount        Float         @default(0)
+  netPayableAmount       Float
+  jFormNumber            String        @unique // e.g. J-HR-2026-90412
+  verifiedByOfficer      String
+  createdAt              DateTime      @default(now())
+
+  booking                Booking       @relation(fields: [bookingId], references: [id])
+  paymentRecord          PaymentRecord?
+}
+
+model PaymentRecord {
+  id                  String             @id @default(cuid())
+  procurementId       String             @unique
+  paymentRefNumber    String             @unique // e.g. DBT-SBI-2026-98124
+  amount              Float
+  status              String             @default("PENDING") // PENDING, INITIATED, PROCESSED, FAILED
+  mode                String             @default("DBT_PFMS")
+  bankAccountMasked   String
+  ifscCode            String
+  initiatedAt         DateTime?
+  completedAt         DateTime?
+
+  procurement         ProcurementRecord  @relation(fields: [procurementId], references: [id])
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String?
+  farmerId   String?
+  title      String
+  titleHi    String
+  message    String
+  messageHi  String
+  channel    String   @default("APP") // SMS, WHATSAPP, PUSH, APP
+  type       String   @default("INFO") // SLOT_CONFIRMATION, QUEUE_ALERT, TURN_APPROACHING, QUALITY_PASSED, PAYMENT_INITIATED, SYSTEM
+  isRead     Boolean  @default(false)
+  sentAt     DateTime @default(now())
+
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  farmer     Farmer?  @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  resource   String
+  details    String?
+  ipAddress  String?  @default("127.0.0.1")
+  createdAt  DateTime @default(now())
+
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}

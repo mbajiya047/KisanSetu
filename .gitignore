@@ -1,0 +1,44 @@
+# Node dependencies
+node_modules/
+*/node_modules/
+
+# Production build outputs
+dist/
+*/dist/
+dist-ssr/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+server/.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# SQLite database files
+server/prisma/dev.db
+server/prisma/dev.db-journal
+*.sqlite
+*.sqlite-journal
+*.db
+*.db-journal
+
+# Editor & OS files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

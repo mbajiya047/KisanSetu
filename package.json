@@ -1,0 +1,24 @@
+{
+  "name": "kisansetu",
+  "version": "1.0.0",
+  "description": "KisanSetu - Common India-Wide Agricultural Procurement Scheduling & Queue Management Platform (SIH 2026 Problem ID 26032)",
+  "private": true,
+  "scripts": {
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm run build",
+    "db:seed": "cd server && npm run db:seed",
+    "db:push": "cd server && npm run db:push",
+    "db:generate": "cd server && npm run db:generate"
+  },
+  "keywords": [
+    "sih2026",
+    "agritech",
+    "procurement",
+    "queue-management",
+    "farmer-welfare"
+  ],
+  "author": "SIH 2026 Team",
+  "license": "MIT"
+}
