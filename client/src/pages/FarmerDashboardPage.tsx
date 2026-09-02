@@ -15,6 +15,7 @@ import {
   ArrowRight,
   TrendingUp,
   FileCheck2,
+  FileSpreadsheet,
   Bell,
   Sparkles,
   ShieldCheck,
@@ -71,13 +72,21 @@ export const FarmerDashboardPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 relative z-10">
+        <div className="flex flex-wrap items-center gap-2.5 relative z-10">
           <Link
             to="/farmer/book-slot"
-            className="btn-accent py-2.5 px-5 text-xs font-bold flex items-center gap-1.5 shadow-md bg-amber-400 hover:bg-amber-300 text-slate-950"
+            className="btn-accent py-2.5 px-5 text-xs font-bold flex items-center gap-1.5 shadow-md bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl"
           >
             <CalendarCheck2 className="w-4 h-4" />
-            <span>{t.heroBtnBook}</span>
+            <span>{language === 'hi' ? 'स्लॉट बुक करें (Booking)' : 'Book Slot'}</span>
+          </Link>
+
+          <Link
+            to="/farmer/procurement"
+            className="btn-secondary py-2.5 px-5 text-xs font-bold flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl transition-all"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
+            <span>{language === 'hi' ? 'खरीद ट्रैक करें (Tracing)' : 'Track / Tracing'}</span>
           </Link>
         </div>
       </div>
@@ -185,14 +194,24 @@ export const FarmerDashboardPage: React.FC = () => {
               </p>
             </div>
 
-            <Link
-              to="/farmer/book-slot"
-              className="btn-primary py-3.5 px-8 text-sm font-black shadow-lg bg-emerald-700 hover:bg-emerald-800 flex items-center gap-2 transform hover:-translate-y-0.5 transition-all text-white"
-            >
-              <CalendarCheck2 className="w-5 h-5" />
-              <span>{language === 'hi' ? 'पहला स्लॉट बुक करें (Book Slot)' : 'Book Procurement Slot Now'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md">
+              <Link
+                to="/farmer/book-slot"
+                className="btn-primary w-full sm:w-auto flex-1 py-3 px-6 text-xs font-black shadow-lg bg-emerald-700 hover:bg-emerald-800 flex items-center justify-center gap-2 transform hover:-translate-y-0.5 transition-all text-white rounded-xl"
+              >
+                <CalendarCheck2 className="w-4 h-4" />
+                <span>{language === 'hi' ? 'स्लॉट बुक करें (Booking)' : 'Book Procurement Slot'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <Link
+                to="/farmer/procurement"
+                className="btn-secondary w-full sm:w-auto flex-1 py-3 px-6 text-xs font-bold flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 shadow-sm rounded-xl"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
+                <span>{language === 'hi' ? 'खरीद ट्रैक करें (Tracing)' : 'Track / Tracing'}</span>
+              </Link>
+            </div>
 
             <div className="flex flex-wrap items-center justify-center gap-4 pt-1 text-[11px] font-semibold text-slate-500">
               <span className="flex items-center gap-1">✓ {language === 'hi' ? 'तुरंत डिजिटल क्यूआर पास' : 'Instant Digital QR Pass'}</span>
@@ -243,13 +262,22 @@ export const FarmerDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          <Link
-            to={activeBooking ? "/farmer/procurement" : "/farmer/book-slot"}
-            className="btn-secondary w-full py-2.5 text-xs font-bold text-center flex items-center justify-center gap-1.5"
-          >
-            <FileCheck2 className="w-3.5 h-3.5 text-agri-700" />
-            <span>{activeBooking ? t.actionMyProcurement : 'Book Slot Now'}</span>
-          </Link>
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              to="/farmer/book-slot"
+              className="btn-accent py-2 text-[11px] font-bold text-center flex items-center justify-center gap-1 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl"
+            >
+              <CalendarCheck2 className="w-3.5 h-3.5" />
+              <span>{language === 'hi' ? 'स्लॉट बुक' : 'Book Slot'}</span>
+            </Link>
+            <Link
+              to="/farmer/procurement"
+              className="btn-secondary py-2 text-[11px] font-bold text-center flex items-center justify-center gap-1 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
+              <span>{language === 'hi' ? 'ट्रैकिंग' : 'Track / Trace'}</span>
+            </Link>
+          </div>
         </div>
       </div>
 

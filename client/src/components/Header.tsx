@@ -13,6 +13,8 @@ import {
   X,
   LayoutDashboard,
   Calendar,
+  CalendarCheck2,
+  FileSpreadsheet,
   Layers,
   Building,
   HelpCircle,
@@ -46,8 +48,14 @@ export const Header: React.FC = () => {
     }
   };
 
+  const isFarmer = !user || user.role === 'FARMER';
+
   const navLinks = [
     { to: '/', label: t.navHome, icon: Sprout },
+    ...(isAuthenticated && isFarmer ? [
+      { to: '/farmer/book-slot', label: language === 'hi' ? 'स्लॉट बुक (Booking)' : 'Book Slot', icon: CalendarCheck2, isAction: true },
+      { to: '/farmer/procurement', label: language === 'hi' ? 'ट्रैकिंग (Trace)' : 'Track / Trace', icon: FileSpreadsheet, isAction: true },
+    ] : []),
     { to: '/states', label: t.navStates, icon: Layers },
     { to: '/centers', label: t.navCenters, icon: Building },
     { to: '/mandi-status', label: t.navMandiStatus, icon: Activity },
@@ -87,14 +95,32 @@ export const Header: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {navLinks.map((link) => {
+          <nav className="hidden lg:flex items-center gap-1.5">
+            {navLinks.map((link: any) => {
               const isActive = location.pathname === link.to;
+              if (link.isAction) {
+                return (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      isActive
+                        ? 'bg-amber-400 text-slate-950 font-black shadow-sm'
+                        : link.to.includes('book')
+                        ? 'bg-amber-100/90 text-amber-950 border border-amber-300 hover:bg-amber-200'
+                        : 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-100'
+                    }`}
+                  >
+                    <link.icon className="w-3.5 h-3.5" />
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              }
               return (
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     isActive
                       ? 'bg-agri-50 text-agri-800 font-semibold border border-agri-200/60'
                       : 'text-slate-600 hover:text-agri-800 hover:bg-slate-50'
