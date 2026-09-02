@@ -6,19 +6,18 @@ import { Sparkles, User, Shield, CheckCircle2, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const DemoBanner: React.FC = () => {
-  const { user, loginAsDemoRole, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
 
-  const roles: { role: UserRole; labelEn: string; labelHi: string; icon: any; route: string }[] = [
-    { role: 'FARMER', labelEn: 'Farmer (Ramesh Kumar)', labelHi: 'किसान (रमेश कुमार)', icon: User, route: '/farmer/dashboard' },
-    { role: 'MANDI_OFFICER', labelEn: 'Mandi Officer (Sonipat)', labelHi: 'मंडी अधिकारी (सोनीपत)', icon: Shield, route: '/officer/dashboard' },
-    { role: 'SUPER_ADMIN', labelEn: 'Super Admin (India)', labelHi: 'राष्ट्रीय सुपर एडमिन', icon: Sparkles, route: '/admin' },
+  const roles = [
+    { role: 'FARMER', labelEn: 'Farmer', labelHi: 'किसान', icon: User, queryRole: 'FARMER' },
+    { role: 'ADMIN_OFFICER', labelEn: 'Officer / Admin', labelHi: 'अधिकारी / एडमिन', icon: Shield, queryRole: 'ADMIN_OFFICER' },
+    { role: 'SUPER_ADMIN', labelEn: 'Super Admin', labelHi: 'सुपर एडमिन', icon: Sparkles, queryRole: 'SUPER_ADMIN' },
   ];
 
-  const handleSwitch = async (r: (typeof roles)[0]) => {
-    await loginAsDemoRole(r.role);
-    navigate(r.route);
+  const handleRoleClick = (r: (typeof roles)[0]) => {
+    navigate(`/login?role=${r.queryRole}`);
   };
 
   return (
@@ -36,15 +35,15 @@ export const DemoBanner: React.FC = () => {
 
       <div className="flex items-center gap-1.5 flex-wrap">
         <span className="text-slate-400 text-[11px] mr-1 hidden sm:inline">
-          {language === 'hi' ? 'त्वरित भूमिका स्विच:' : 'Switch Demo Role:'}
+          {language === 'hi' ? 'लॉगिन पोर्टल चुनें:' : 'Select Login Portal:'}
         </span>
         {roles.map((r) => {
           const Icon = r.icon;
           const isActive = user?.role === r.role;
           return (
             <button
-              key={r.role}
-              onClick={() => handleSwitch(r)}
+              key={r.queryRole}
+              onClick={() => handleRoleClick(r)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 isActive
                   ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-400 font-bold'

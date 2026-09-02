@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { api } from '../services/api';
@@ -31,9 +31,21 @@ export const LoginPage: React.FC = () => {
   const { user, isAuthenticated, logout, loginWithPhoneAndOtp, setAuthSession } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // 3 Separate Login Modes: FARMER, ADMIN_OFFICER, SUPER_ADMIN
   const [loginMode, setLoginMode] = useState<'FARMER' | 'ADMIN_OFFICER' | 'SUPER_ADMIN'>('FARMER');
+
+  useEffect(() => {
+    const roleParam = searchParams.get('role');
+    if (roleParam === 'FARMER') {
+      setLoginMode('FARMER');
+    } else if (roleParam === 'ADMIN_OFFICER' || roleParam === 'ADMIN') {
+      setLoginMode('ADMIN_OFFICER');
+    } else if (roleParam === 'SUPER_ADMIN') {
+      setLoginMode('SUPER_ADMIN');
+    }
+  }, [searchParams]);
 
   // Farmer State (Phone + OTP)
   const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
@@ -53,60 +65,6 @@ export const LoginPage: React.FC = () => {
 
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  // If user is already logged in, show Booking & Tracking options directly
-  if (isAuthenticated && user) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-slate-50">
-        <div className="max-w-xl w-full card p-8 sm:p-10 bg-white border border-slate-200 shadow-xl rounded-3xl text-center space-y-6">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto shadow-inner">
-            <ShieldCheck className="w-8 h-8 text-emerald-700" />
-          </div>
-
-          <div className="space-y-2">
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
-              ✓ {language === 'hi' ? 'सक्रिय सत्र' : 'Active Session'}
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-              {language === 'hi' ? 'आप पहले से लॉग इन हैं' : 'You are Signed In'}
-            </h2>
-            <p className="text-sm text-slate-600">
-              {language === 'hi' ? 'किसान का नाम' : 'Signed in as'}: <strong className="text-slate-900 font-bold">{user.name || user.farmerProfile?.fullName}</strong>
-              {user.farmerProfile?.district?.name ? ` (${user.farmerProfile.district.name})` : ''}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            <Link
-              to="/farmer/book-slot"
-              className="btn-accent py-3 px-5 text-sm font-bold flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl shadow-md"
-            >
-              <CalendarCheck2 className="w-4 h-4" />
-              <span>{language === 'hi' ? 'स्लॉट बुक करें (Booking)' : 'Book Procurement Slot'}</span>
-            </Link>
-
-            <Link
-              to="/farmer/procurement"
-              className="btn-primary py-3 px-5 text-sm font-bold flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl shadow-md"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>{language === 'hi' ? 'खरीद ट्रैक करें (Tracing)' : 'Track / Tracing Status'}</span>
-            </Link>
-          </div>
-
-          <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-center gap-4 text-xs font-semibold">
-            <Link to="/farmer/dashboard" className="text-emerald-700 hover:underline">
-              {language === 'hi' ? 'डैशबोर्ड पर जाएं →' : 'Go to Dashboard →'}
-            </Link>
-            <span>•</span>
-            <button onClick={logout} className="text-rose-600 hover:underline">
-              {language === 'hi' ? 'दूसरे खाते से लॉगिन करें (लॉगआउट)' : 'Sign Out / Switch Account'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // 1. Farmer: Send OTP
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -243,6 +201,7 @@ export const LoginPage: React.FC = () => {
               type="button"
               onClick={() => {
                 setLoginMode('FARMER');
+                setSearchParams({ role: 'FARMER' });
                 setErrorMsg('');
               }}
               className={`py-2.5 px-2 rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 text-center ${
@@ -262,6 +221,7 @@ export const LoginPage: React.FC = () => {
               type="button"
               onClick={() => {
                 setLoginMode('ADMIN_OFFICER');
+                setSearchParams({ role: 'ADMIN_OFFICER' });
                 setErrorMsg('');
               }}
               className={`py-2.5 px-2 rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 text-center ${
@@ -281,6 +241,7 @@ export const LoginPage: React.FC = () => {
               type="button"
               onClick={() => {
                 setLoginMode('SUPER_ADMIN');
+                setSearchParams({ role: 'SUPER_ADMIN' });
                 setErrorMsg('');
               }}
               className={`py-2.5 px-2 rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 text-center ${
