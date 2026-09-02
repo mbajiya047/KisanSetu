@@ -353,44 +353,56 @@ class ApiClient {
 
   async getFarmerDashboardSummary() {
     try {
-      return await this.request<{ success: boolean; isRegistered: boolean; farmer: any; crops: any[]; activeBooking: any; totalBookingsCount: number }>('/farmer/dashboard-summary');
+      const res = await this.request<{ success: boolean; isRegistered: boolean; farmer: any; crops: any[]; activeBooking: any; totalBookingsCount: number }>('/farmer/dashboard-summary');
+      return res;
     } catch (err: any) {
       console.warn('getFarmerDashboardSummary fallback:', err.message);
-      return {
-        success: true,
-        isRegistered: true,
-        farmer: {
-          farmerId: 'FARM-HR-2026-8819',
-          fullName: 'Ramesh Kumar',
-          fatherName: 'Harish Kumar',
-          phone: '9876543210',
-          village: 'Karnal Village',
-          totalLandAcres: 5.5,
-          isVerified: true,
-          state: { name: 'Haryana' },
-          district: { name: 'Karnal' },
-        },
-        crops: [
-          { id: 'c1', cropName: 'Wheat (गेहूं)', variety: 'HD-2967', totalAcreage: 3.5, estimatedYieldQuintals: 70, verifiedYieldQuintals: 68, status: 'VERIFIED' },
-          { id: 'c2', cropName: 'Mustard (सरसों)', variety: 'Pusa Bold', totalAcreage: 2.0, estimatedYieldQuintals: 30, verifiedYieldQuintals: 28, status: 'VERIFIED' },
-        ],
-        activeBooking: {
+      
+      const token = (typeof window !== 'undefined' ? localStorage.getItem('kisansetu_token') : null) || '';
+      const isNewFarmer = token.includes('token_farmer_') || token.includes('new_farmer');
+      
+      // Check if user has explicitly booked a slot in this session
+      const savedBookingStr = typeof window !== 'undefined' ? localStorage.getItem('kisansetu_active_booking') : null;
+      let activeBooking = null;
+
+      if (savedBookingStr) {
+        try {
+          activeBooking = JSON.parse(savedBookingStr);
+        } catch (e) {}
+      } else if (!isNewFarmer && token === 'kisansetu_demo_farmer_jwt_token') {
+        // ONLY the pre-seeded demo farmer (Ramesh Kumar - 9876543210) gets the initial demo token #42
+        activeBooking = {
           id: 'book-1',
-          bookingNumber: 'KS-2026-0902-8819',
+          bookingToken: 'WHT-4921',
           tokenNumber: 42,
-          date: new Date().toISOString().split('T')[0],
+          date: '15 September 2026',
           timeSlot: '10:00 AM - 12:00 PM',
-          status: 'CONFIRMED',
+          status: 'WEIGHING',
+          crop: { name: 'Wheat', hindiName: 'गेहूं', mspRatePerQuintal: 2425 },
           cropName: 'Wheat (गेहूं)',
-          allocatedQuantityQuintals: 50,
+          bookedQuantityQuintals: 42,
+          allocatedQuantityQuintals: 42,
           estimatedWaitMinutes: 15,
           center: {
             name: 'Karnal Grain Market Procurement Center #1',
             code: 'HR-KAR-001',
             address: 'Main Mandi Road, Sector 12, Karnal',
           },
-        },
-        totalBookingsCount: 3,
+          queueEntry: { tokenNumber: '#42', stage: 'WEIGHING' },
+          vehicleNumber: 'HR-10-AT-7821',
+          vehicleType: 'Tractor-Trolley',
+        };
+      }
+
+      return {
+        success: true,
+        isRegistered: true,
+        farmer: null, // components will pick from user context
+        crops: activeBooking ? [
+          { id: 'c1', cropName: 'Wheat (गेहूं)', variety: 'HD-2967', totalAcreage: 3.5, estimatedYieldQuintals: 70, verifiedYieldQuintals: 68, status: 'VERIFIED' },
+        ] : [],
+        activeBooking: activeBooking, // null for new accounts!
+        totalBookingsCount: activeBooking ? 1 : 0,
       };
     }
   }
@@ -403,6 +415,11 @@ class ApiClient {
   }
 
   async registerFarmerSimplified(payload: { fullName: string; phone: string; dob: string; email?: string; stateId?: string; districtId?: string }) {
+    // Clear any previous active booking so this new account starts 100% fresh
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('kisansetu_active_booking');
+    }
+
     try {
       return await this.request<{ success: boolean; token: string; user: any; message: string }>('/auth/farmer-register', {
         method: 'POST',
@@ -423,7 +440,7 @@ class ApiClient {
           farmerId: `FARM-${stateObj.code}-2026-${Math.floor(1000 + Math.random() * 9000)}`,
           fullName: payload.fullName,
           phone: payload.phone,
-          village: `${districtObj.name} Rural`,
+          village: `${districtObj.name} Village`,
           totalLandAcres: 5.0,
           isVerified: true,
           stateId: stateObj.id,
@@ -481,14 +498,28 @@ class ApiClient {
   }
 
   // Centers
-  getCenters(params?: { stateId?: string; districtId?: string; cropId?: string; search?: string }) {
+  async getCenters(params?: { stateId?: string; districtId?: string; cropId?: string; search?: string }) {
     const query = new URLSearchParams();
     if (params?.stateId) query.append('stateId', params.stateId);
     if (params?.districtId) query.append('districtId', params.districtId);
     if (params?.cropId) query.append('cropId', params.cropId);
     if (params?.search) query.append('search', params.search);
 
-    return this.request<{ success: boolean; centers: any[] }>(`/centers?${query.toString()}`);
+    try {
+      return await this.request<{ success: boolean; centers: any[] }>(`/centers?${query.toString()}`);
+    } catch (err: any) {
+      console.warn('getCenters fallback:', err.message);
+      return {
+        success: true,
+        centers: [
+          { id: 'center-rj-nagaur-1', name: 'Nagaur Krishi Upaj Mandi Samiti', code: 'RJ-NAG-001', address: 'Merta Road, Nagaur', state: { name: 'Rajasthan' }, district: { name: 'Nagaur' }, operationalStatus: 'ACTIVE', currentWaitTimeMinutes: 10, totalCapacityQuintals: 5000 },
+          { id: 'center-rj-jaipur-1', name: 'Jaipur Muhana Mandi Terminal', code: 'RJ-JPR-001', address: 'Muhana Terminal Market, Sanganer, Jaipur', state: { name: 'Rajasthan' }, district: { name: 'Jaipur' }, operationalStatus: 'ACTIVE', currentWaitTimeMinutes: 15, totalCapacityQuintals: 8000 },
+          { id: 'center-rj-sikar-1', name: 'Sikar Grain Market Yard', code: 'RJ-SKR-001', address: 'Station Road, Sikar', state: { name: 'Rajasthan' }, district: { name: 'Sikar' }, operationalStatus: 'ACTIVE', currentWaitTimeMinutes: 12, totalCapacityQuintals: 4000 },
+          { id: 'center-hr-karnal-1', name: 'Karnal Grain Market Procurement Center #1', code: 'HR-KAR-001', address: 'Main Mandi Road, Sector 12, Karnal', state: { name: 'Haryana' }, district: { name: 'Karnal' }, operationalStatus: 'ACTIVE', currentWaitTimeMinutes: 15, totalCapacityQuintals: 6000 },
+          { id: 'center-pb-ludhiana-1', name: 'Ludhiana Dana Mandi Procurement Hub', code: 'PB-LDH-001', address: 'Gill Road, Ludhiana', state: { name: 'Punjab' }, district: { name: 'Ludhiana' }, operationalStatus: 'ACTIVE', currentWaitTimeMinutes: 20, totalCapacityQuintals: 10000 },
+        ],
+      };
+    }
   }
 
   getCenterDetails(id: string) {
@@ -507,15 +538,36 @@ class ApiClient {
   }
 
   // Slots
-  getAvailableSlots(centerId: string, cropId?: string, date?: string) {
+  async getAvailableSlots(centerId: string, cropId?: string, date?: string) {
     const query = new URLSearchParams({ centerId });
     if (cropId) query.append('cropId', cropId);
     if (date) query.append('date', date);
 
-    return this.request<{ success: boolean; center: any; slots: any[] }>(`/slots/available?${query.toString()}`);
+    try {
+      return await this.request<{ success: boolean; center: any; slots: any[] }>(`/slots/available?${query.toString()}`);
+    } catch (err: any) {
+      console.warn('getAvailableSlots fallback:', err.message);
+      return {
+        success: true,
+        center: {
+          id: centerId,
+          name: 'Procurement Mandi Yard Center',
+          code: 'MANDI-01',
+          dailyCapacityLimitQuintals: 2000,
+        },
+        slots: [
+          { id: 'slot-1', startTime: '09:00 AM', endTime: '10:00 AM', maxCapacityQuintals: 500, bookedQuantityQuintals: 120, status: 'AVAILABLE' },
+          { id: 'slot-2', startTime: '10:00 AM', endTime: '11:00 AM', maxCapacityQuintals: 500, bookedQuantityQuintals: 240, status: 'AVAILABLE' },
+          { id: 'slot-3', startTime: '11:00 AM', endTime: '12:00 PM', maxCapacityQuintals: 500, bookedQuantityQuintals: 480, status: 'FAST_FILLING' },
+          { id: 'slot-4', startTime: '12:00 PM', endTime: '01:00 PM', maxCapacityQuintals: 500, bookedQuantityQuintals: 500, status: 'FULL' },
+          { id: 'slot-5', startTime: '02:00 PM', endTime: '03:00 PM', maxCapacityQuintals: 500, bookedQuantityQuintals: 90, status: 'AVAILABLE' },
+          { id: 'slot-6', startTime: '03:00 PM', endTime: '04:00 PM', maxCapacityQuintals: 500, bookedQuantityQuintals: 150, status: 'AVAILABLE' },
+        ],
+      };
+    }
   }
 
-  bookSlot(payload: {
+  async bookSlot(payload: {
     slotId: string;
     centerId: string;
     cropId: string;
@@ -523,10 +575,59 @@ class ApiClient {
     vehicleNumber?: string;
     vehicleType?: string;
   }) {
-    return this.request<{ success: boolean; message: string; booking: any }>('/slots/book', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await this.request<{ success: boolean; message: string; booking: any }>('/slots/book', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      if (res.success && res.booking) {
+        localStorage.setItem('kisansetu_active_booking', JSON.stringify(res.booking));
+      }
+      return res;
+    } catch (err: any) {
+      console.warn('API bookSlot fallback:', err.message);
+      const tokenNum = Math.floor(100 + Math.random() * 899);
+      const cropNames: Record<string, { name: string; hindiName: string; msp: number }> = {
+        'crop-wheat': { name: 'Wheat', hindiName: 'गेहूं', msp: 2425 },
+        'crop-paddy': { name: 'Paddy / Rice', hindiName: 'धान', msp: 2441 },
+        'crop-mustard': { name: 'Mustard / Rapeseed', hindiName: 'सरसों', msp: 5950 },
+        'crop-bajra': { name: 'Bajra', hindiName: 'बाजरा', msp: 2900 },
+        'crop-cotton': { name: 'Cotton', hindiName: 'कपास', msp: 7121 },
+      };
+      const cropInfo = cropNames[payload.cropId] || { name: 'Wheat', hindiName: 'गेहूं', msp: 2425 };
+      
+      const newBooking = {
+        id: 'book-' + Date.now(),
+        bookingToken: `KS-${cropInfo.name.slice(0, 3).toUpperCase()}-${tokenNum}`,
+        tokenNumber: tokenNum,
+        status: 'CONFIRMED',
+        crop: cropInfo,
+        cropName: `${cropInfo.name} (${cropInfo.hindiName})`,
+        bookedQuantityQuintals: payload.quantityQuintals || 40,
+        allocatedQuantityQuintals: payload.quantityQuintals || 40,
+        estimatedWaitMinutes: 15,
+        center: {
+          id: payload.centerId,
+          name: payload.centerId.includes('nagaur') ? 'Nagaur Krishi Upaj Mandi Samiti' : 'Procurement Mandi Center',
+          address: 'Main Mandi Road',
+        },
+        scheduledDate: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+        scheduledTime: '10:00 AM - 12:00 PM',
+        queueEntry: { tokenNumber: `#${tokenNum}`, stage: 'GATE_ENTRY' },
+        vehicleNumber: payload.vehicleNumber || 'RJ-21-EA-4521',
+        vehicleType: payload.vehicleType || 'Tractor-Trolley',
+      };
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('kisansetu_active_booking', JSON.stringify(newBooking));
+      }
+
+      return {
+        success: true,
+        message: 'Slot booked successfully! QR Gate Pass generated.',
+        booking: newBooking,
+      };
+    }
   }
 
   getTokenDetails(tokenCode: string) {
