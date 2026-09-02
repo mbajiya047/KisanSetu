@@ -23,7 +23,17 @@ class ApiClient {
 
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-      const data = await response.json();
+      const rawText = await response.text();
+      let data: any = {};
+
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch (parseError) {
+        if (!response.ok) {
+          throw new Error(`API error ${response.status}: ${rawText.slice(0, 80)}`);
+        }
+        throw new Error(`Invalid JSON response: ${rawText.slice(0, 80)}`);
+      }
 
       if (!response.ok) {
         throw new Error(data.message || `HTTP Error ${response.status}`);

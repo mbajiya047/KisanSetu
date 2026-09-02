@@ -64,9 +64,11 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 KisanSetu Backend API running on http://localhost:${PORT}`);
-  console.log(`🌾 SIH 2026 Problem Statement ID: 26032`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 KisanSetu Backend API running on http://localhost:${PORT}`);
+    console.log(`🌾 SIH 2026 Problem Statement ID: 26032`);
+  });
+}
 
 export default app;
