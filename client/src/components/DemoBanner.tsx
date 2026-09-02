@@ -2,11 +2,11 @@ import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import type { UserRole } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Sparkles, User, Shield, CheckCircle2 } from 'lucide-react';
+import { Sparkles, User, Shield, CheckCircle2, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const DemoBanner: React.FC = () => {
-  const { user, loginAsDemoRole } = useAuth();
+  const { user, loginAsDemoRole, logout } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
 
@@ -57,6 +57,20 @@ export const DemoBanner: React.FC = () => {
             </button>
           );
         })}
+
+        {user && (
+          <button
+            onClick={() => {
+              logout();
+              navigate('/');
+            }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-950/70 hover:bg-rose-900 text-rose-200 border border-rose-700/60 transition-all ml-1 shadow-sm"
+            title="Log out of all accounts"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>{language === 'hi' ? 'लॉगआउट' : 'Log Out'}</span>
+          </button>
+        )}
       </div>
     </div>
   );

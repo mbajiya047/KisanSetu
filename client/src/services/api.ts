@@ -316,24 +316,6 @@ class ApiClient {
             };
           } catch (e) {}
         }
-        return {
-          success: true,
-          user: {
-            id: 'demo-farmer-id',
-            name: 'Ramesh Kumar',
-            phone: '9876543210',
-            role: 'FARMER',
-            farmerProfile: {
-              farmerId: 'FARM-HR-2026-8819',
-              fullName: 'Ramesh Kumar',
-              village: 'Karnal Village',
-              totalLandAcres: 5.5,
-              isVerified: true,
-              state: { name: 'Haryana' },
-              district: { name: 'Karnal' },
-            },
-          },
-        };
       }
       throw err;
     }

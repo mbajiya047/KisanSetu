@@ -56,6 +56,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // When opening the site in a fresh tab/window, ensure all accounts are logged out by default
+    const hasSessionLogin = typeof window !== 'undefined' && sessionStorage.getItem('kisansetu_session_active') === 'true';
+    if (!hasSessionLogin) {
+      localStorage.removeItem('kisansetu_token');
+      localStorage.removeItem('kisansetu_user');
+      localStorage.removeItem('kisansetu_active_booking');
+      setUser(null);
+      setToken(null);
+      setIsLoading(false);
+      return;
+    }
+
     const savedToken = localStorage.getItem('kisansetu_token');
     if (savedToken) {
       refreshUser();
@@ -69,7 +81,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await api.verifyOtp(phone, otp);
       if (res.success && res.token) {
-        localStorage.setItem('kisansetu_token', res.token);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('kisansetu_session_active', 'true');
+          localStorage.setItem('kisansetu_token', res.token);
+          if (res.user) localStorage.setItem('kisansetu_user', JSON.stringify(res.user));
+        }
         setToken(res.token);
         setUser(res.user);
         return { isNewUser: res.isNewUser };
@@ -85,7 +101,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await api.demoLogin(role);
       if (res.success && res.token) {
-        localStorage.setItem('kisansetu_token', res.token);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('kisansetu_session_active', 'true');
+          localStorage.setItem('kisansetu_token', res.token);
+          if (res.user) localStorage.setItem('kisansetu_user', JSON.stringify(res.user));
+        }
         setToken(res.token);
         setUser(res.user);
       }
@@ -97,13 +117,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setAuthSession = (newToken: string, newUser: UserProfile) => {
-    localStorage.setItem('kisansetu_token', newToken);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('kisansetu_session_active', 'true');
+      localStorage.setItem('kisansetu_token', newToken);
+      localStorage.setItem('kisansetu_user', JSON.stringify(newUser));
+    }
     setToken(newToken);
     setUser(newUser);
   };
 
   const logout = () => {
-    localStorage.removeItem('kisansetu_token');
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('kisansetu_session_active');
+      localStorage.removeItem('kisansetu_token');
+      localStorage.removeItem('kisansetu_user');
+      localStorage.removeItem('kisansetu_active_booking');
+    }
     setToken(null);
     setUser(null);
   };
