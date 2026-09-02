@@ -150,35 +150,3 @@ KisanSetu/
 ├── vercel.json
 ├── .gitignore
 └── README.md
-
-## API
-
-Backend provides REST APIs for:
-
-- Authentication
-- Farmers
-- Procurement Centers
-- Crops
-- Slot Management
-- Bookings
-- Queue Management
-- Procurement Tracking
-- Notifications
-
-## Security
-
-KisanSetu follows basic application security practices:
-
-- Password hashing using bcrypt
-- JWT-based authentication
-- Input validation using Zod
-- Role-based authorization
-- CORS configuration
-- Environment-based secrets
-- Database access through Prisma ORM
-
-## Future Scope
-
-KisanSetu can be expanded with:
-
-- Multi-language support
