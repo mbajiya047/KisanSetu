@@ -129,6 +129,85 @@ Payment Status
 - CORS protection
 - Environment variables for sensitive configuration
 
+API
+
+Backend provides REST APIs for:
+
+Authentication
+Farmers
+Procurement Centers
+Crops
+Slot Management
+Bookings
+Queue Management
+Procurement Tracking
+Notifications
+Security
+
+KisanSetu follows basic application security practices:
+
+Password hashing using bcrypt
+JWT-based authentication
+Input validation using Zod
+Role-based authorization
+CORS configuration
+Environment-based secrets
+Database access through Prisma ORM
+Future Scope
+
+KisanSetu can be expanded with:
+
+Multi-language support
+Hindi and regional-language interface
+SMS notifications
+WhatsApp notifications
+Mobile application
+GPS-based procurement center discovery
+AI-based queue prediction
+Demand and arrival forecasting
+Crop quality prediction
+Digital payment integration
+Government procurement API integration
+Real-time center capacity monitoring
+Analytics dashboard
+Multi-state deployment
+Live Demo
+
+Frontend:
+https://kisan-setu-liard.vercel.app
+
+Database
+
+KisanSetu uses PostgreSQL with Prisma ORM.
+
+Database management is handled through Neon.
+
+Never expose database credentials, connection strings, API keys, or other secrets in README or public repositories.
+
+Vision
+
+KisanSetu aims to create a simpler and more transparent procurement experience for farmers.
+
+Instead of farmers spending hours waiting in physical queues, KisanSetu enables them to plan their visit through digital scheduling and real-time queue information.
+
+Less waiting. Better planning. Smarter procurement.
+
+Project Information
+
+Project: KisanSetu
+Problem Statement ID: 26032
+Theme: Smart Automation
+Category: Software
+Focus: Agricultural Procurement Scheduling & Queue Management
+
+Repository
+
+https://github.com/mbajiya047/KisanSetu
+
+License
+
+This project is licensed under the MIT License.
+
 ## Project Structure
 
 ```text
@@ -150,3 +229,5 @@ KisanSetu/
 ├── vercel.json
 ├── .gitignore
 └── README.md
+
+
