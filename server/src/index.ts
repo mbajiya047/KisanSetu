@@ -26,14 +26,18 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Request logger for development
+// Request logger & URL normalization for development & Vercel
 app.use((req: Request, _res: Response, next: NextFunction) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  const vercelPath = (req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || req.headers['x-forwarded-url']) as string | undefined;
+  if (vercelPath && vercelPath.startsWith('/api') && req.url !== vercelPath) {
+    req.url = vercelPath;
+  }
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} (original: ${req.originalUrl})`);
   next();
 });
 
 // Health check
-app.get('/api/health', (_req: Request, res: Response) => {
+const handleHealth = (_req: Request, res: Response) => {
   res.json({
     status: 'OK',
     application: 'KisanSetu Agricultural Procurement & Queue Management Platform',
@@ -41,19 +45,27 @@ app.get('/api/health', (_req: Request, res: Response) => {
     sihProblemStatement: '26032',
     timestamp: new Date().toISOString(),
   });
-});
+};
 
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/farmer', farmerRoutes);
-app.use('/api/states', stateRoutes);
-app.use('/api/centers', centerRoutes);
-app.use('/api/slots', slotRoutes);
-app.use('/api/queue', queueRoutes);
-app.use('/api/procurement', procurementRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/open-data', openDataRoutes);
+app.get('/api/health', handleHealth);
+app.get('/health', handleHealth);
+
+// API Routes mounted on both '/api/...' and '/...' for maximum compatibility
+const registerRoute = (prefix: string) => {
+  app.use(`${prefix}/auth`, authRoutes);
+  app.use(`${prefix}/farmer`, farmerRoutes);
+  app.use(`${prefix}/states`, stateRoutes);
+  app.use(`${prefix}/centers`, centerRoutes);
+  app.use(`${prefix}/slots`, slotRoutes);
+  app.use(`${prefix}/queue`, queueRoutes);
+  app.use(`${prefix}/procurement`, procurementRoutes);
+  app.use(`${prefix}/notifications`, notificationRoutes);
+  app.use(`${prefix}/admin`, adminRoutes);
+  app.use(`${prefix}/open-data`, openDataRoutes);
+};
+
+registerRoute('/api');
+registerRoute('');
 
 // Global error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -64,7 +76,8 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+// Only listen locally, Vercel manages the serverless runtime
+if (!process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`🚀 KisanSetu Backend API running on http://localhost:${PORT}`);
     console.log(`🌾 SIH 2026 Problem Statement ID: 26032`);
