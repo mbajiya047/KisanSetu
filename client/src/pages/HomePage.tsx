@@ -28,7 +28,7 @@ import {
 
 export const HomePage: React.FC = () => {
   const { language, t } = useLanguage();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Quick Search States
@@ -97,6 +97,53 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-900 space-y-16 pb-20">
+      {/* Logged-in Farmer Quick Action Header Banner */}
+      {isAuthenticated && (
+        <div className="bg-gradient-to-r from-agri-950 via-agri-900 to-emerald-950 text-white border-b border-emerald-500/20 shadow-md">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs text-emerald-200 font-bold">
+                  {language === 'hi' ? 'नमस्ते' : 'Welcome'}, <strong className="text-white font-extrabold">{user?.name || user?.farmerProfile?.fullName || 'Farmer'}</strong>
+                  {user?.farmerProfile?.district?.name ? ` (${user.farmerProfile.district.name})` : ''}
+                </p>
+                <p className="text-[11px] text-emerald-100/70 hidden sm:block">
+                  {language === 'hi' ? 'त्वरित सुविधाएं: खरीद स्लॉट बुक करें या अपनी स्थिति ट्रैक करें' : 'Quick Actions: Book Procurement Slot or Track Live Status'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <Link
+                to="/farmer/book-slot"
+                className="btn-accent py-2 px-4 text-xs font-black flex items-center gap-1.5 shadow-md bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl"
+              >
+                <CalendarCheck2 className="w-4 h-4" />
+                <span>{language === 'hi' ? 'स्लॉट बुक करें' : 'Book Slot'}</span>
+              </Link>
+
+              <Link
+                to="/farmer/procurement"
+                className="btn-secondary py-2 px-4 text-xs font-bold flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl transition-all"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
+                <span>{language === 'hi' ? 'खरीद ट्रैक करें' : 'Track Procurement'}</span>
+              </Link>
+
+              <Link
+                to="/farmer/dashboard"
+                className="hidden md:flex py-2 px-3 text-xs font-semibold items-center gap-1 text-emerald-300 hover:text-white"
+              >
+                <span>{language === 'hi' ? 'डैशबोर्ड' : 'Dashboard'} &rarr;</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. HERO SECTION */}
       <section className="relative overflow-hidden bg-gradient-to-b from-agri-50 via-white to-[#f8fafc] pt-12 pb-16 md:pt-20 md:pb-24 border-b border-slate-200/70">
         {/* Decorative Grid Pattern */}
@@ -135,15 +182,15 @@ export const HomePage: React.FC = () => {
                 className="btn-accent w-full sm:w-auto text-base px-8 py-3.5 rounded-2xl shadow-lg shadow-harvest-600/30 flex items-center justify-center gap-2 font-bold"
               >
                 <CalendarCheck2 className="w-5 h-5" />
-                <span>{t.heroBtnBook}</span>
+                <span>{language === 'hi' ? 'खरीद स्लॉट बुक करें (Book Slot)' : 'Book Procurement Slot'}</span>
               </Link>
 
               <Link
                 to="/farmer/procurement"
-                className="btn-secondary w-full sm:w-auto text-base px-8 py-3.5 rounded-2xl flex items-center justify-center gap-2 font-bold shadow-sm bg-white"
+                className="btn-secondary w-full sm:w-auto text-base px-8 py-3.5 rounded-2xl flex items-center justify-center gap-2 font-bold shadow-sm bg-white hover:bg-slate-50 border border-slate-300"
               >
                 <FileSpreadsheet className="w-5 h-5 text-agri-700" />
-                <span>{t.heroBtnTrack}</span>
+                <span>{language === 'hi' ? 'खरीद स्थिति ट्रैक करें (Track)' : 'Track Procurement Status'}</span>
               </Link>
             </div>
 
