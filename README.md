@@ -129,29 +129,6 @@ Payment Status
 - CORS protection
 - Environment variables for sensitive configuration
 
-
-## Project Structure
-
-```text
-KisanSetu/
-│
-├── api/
-│
-├── client/
-│   └── Frontend application
-│
-├── server/
-│   ├── prisma/
-│   │   └── schema.prisma
-│   └── Backend application
-│
-├── package.json
-├── package-lock.json
-├── tsconfig.json
-├── vercel.json
-├── .gitignore
-└── README.md
-
 ## API
 
 Backend provides REST APIs for:
@@ -183,6 +160,29 @@ KisanSetu follows basic application security practices:
 KisanSetu can be expanded with:
 
 - Multi-language support
+
+
+## Project Structure
+
+```text
+KisanSetu/
+│
+├── api/
+│
+├── client/
+│   └── Frontend application
+│
+├── server/
+│   ├── prisma/
+│   │   └── schema.prisma
+│   └── Backend application
+│
+├── package.json
+├── package-lock.json
+├── tsconfig.json
+├── vercel.json
+├── .gitignore
+└── README.md
 
 
 
