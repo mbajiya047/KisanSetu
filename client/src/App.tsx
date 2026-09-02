@@ -8,6 +8,7 @@ import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { DemoBanner } from './components/DemoBanner';
 import { NotificationDrawer } from './components/NotificationDrawer';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { HomePage } from './pages/HomePage';
 import { StatesPage } from './pages/StatesPage';
@@ -166,7 +167,9 @@ export const App: React.FC = () => {
       <LanguageProvider>
         <AuthProvider>
           <NotificationProvider>
-            <AppContent />
+            <ErrorBoundary>
+              <AppContent />
+            </ErrorBoundary>
           </NotificationProvider>
         </AuthProvider>
       </LanguageProvider>

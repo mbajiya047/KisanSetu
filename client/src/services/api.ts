@@ -305,8 +305,17 @@ class ApiClient {
     try {
       return await this.request<{ success: boolean; user: any }>('/auth/me');
     } catch (err: any) {
-      const savedToken = localStorage.getItem('kisansetu_token');
+      const savedToken = typeof window !== 'undefined' ? localStorage.getItem('kisansetu_token') : null;
       if (savedToken) {
+        const savedUserStr = typeof window !== 'undefined' ? localStorage.getItem('kisansetu_user') : null;
+        if (savedUserStr) {
+          try {
+            return {
+              success: true,
+              user: JSON.parse(savedUserStr),
+            };
+          } catch (e) {}
+        }
         return {
           success: true,
           user: {
@@ -320,6 +329,8 @@ class ApiClient {
               village: 'Karnal Village',
               totalLandAcres: 5.5,
               isVerified: true,
+              state: { name: 'Haryana' },
+              district: { name: 'Karnal' },
             },
           },
         };
@@ -450,7 +461,10 @@ class ApiClient {
         },
       };
       const token = `kisansetu_token_farmer_${payload.phone}`;
-      localStorage.setItem('kisansetu_token', token);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('kisansetu_token', token);
+        localStorage.setItem('kisansetu_user', JSON.stringify(user));
+      }
       return {
         success: true,
         token,

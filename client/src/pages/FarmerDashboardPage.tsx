@@ -257,32 +257,36 @@ export const FarmerDashboardPage: React.FC = () => {
       <div className="card p-6 sm:p-7 bg-white border border-slate-200 shadow-md space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-agri-600 animate-ping" />
+            <div className={`w-2.5 h-2.5 rounded-full ${activeBooking ? 'bg-agri-600 animate-ping' : 'bg-emerald-500'}`} />
             <h3 className="font-bold text-base text-slate-900">{t.procurementProgress}</h3>
           </div>
-          <span className="text-xs font-semibold text-slate-500">Live Stage: Weighbridge Gross Scan</span>
+          <span className="text-xs font-semibold text-slate-500">
+            {activeBooking ? `Live Stage: ${activeBooking.status || 'Scheduled'}` : 'Stage: Profile Registered'}
+          </span>
         </div>
 
-        <ProcurementTimeline currentStage={activeBooking.status || 'WEIGHING'} />
+        <ProcurementTimeline currentStage={activeBooking?.status || 'REGISTERED'} />
       </div>
 
       {/* 4. SMART RECOMMENDATION SECTION */}
       <SmartRecommendationCard
-        centerName="Sonipat Central Grain Mandi"
+        centerName={districtName ? `${districtName} APMC Mandi Hub` : "Krishi Upaj Mandi Samiti"}
         distanceKm={4.2}
-        currentQueue={38}
-        expectedWaitMinutes={42}
+        currentQueue={12}
+        expectedWaitMinutes={15}
         availableSlots={27}
         reason="Shortest estimated waiting time with available capacity."
-        centerId="center-sonipat-main"
+        centerId="center-rj-nagaur-1"
       />
 
       {/* QR Token Modal */}
-      <QRTokenModal
-        isOpen={isQRModalOpen}
-        onClose={() => setIsQRModalOpen(false)}
-        booking={activeBooking}
-      />
+      {activeBooking && (
+        <QRTokenModal
+          isOpen={isQRModalOpen}
+          onClose={() => setIsQRModalOpen(false)}
+          booking={activeBooking}
+        />
+      )}
     </div>
   );
 };
