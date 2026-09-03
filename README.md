@@ -2,24 +2,42 @@
 
 ### Smart Agricultural Procurement Scheduling & Queue Management Platform
 
-KisanSetu is a digital platform designed to make agricultural procurement easier, faster, and more transparent for farmers.
+KisanSetu is a digital platform designed to make agricultural procurement easier, faster, and more transparent for farmers. It helps farmers book procurement slots, receive tokens, track queue status, and monitor procurement progress without spending long hours waiting at procurement centers.
 
-It helps farmers book procurement slots, receive tokens, track queue status, and monitor procurement progress without spending long hours waiting at procurement centers.
+**Live Demo:** https://kisan-setu-liard.vercel.app
+
+---
 
 ## Problem Statement
+
+| Field | Details |
+|---|---|
+| Problem Statement ID | 26032 |
+| Title | Farmers often face long waiting times, lack of information regarding procurement schedules, and uncertainty about procurement status. |
+| Organization | Ministry of Consumer Affairs, Food & Public Distribution |
+| Department | Department of Consumer Affairs (DoCA) |
+| Category | Software |
+| Theme | Smart Automation |
 
 Farmers often face:
 
 - Long queues at procurement centers
 - Unclear procurement schedules
-- Crowded mandi/procurement centers
+- Crowded mandi / procurement centers
 - Unnecessary waiting time
 - Difficulty tracking procurement status
 - Lack of real-time queue information
 
-KisanSetu addresses these problems through digital slot booking and smart queue management.
+## Expected Solution
 
-## Solution
+Develop a platform that:
+
+- Enables farmer registration and slot booking
+- Provides real-time queue management
+- Sends SMS/app notifications
+- Tracks procurement status end-to-end
+
+## Our Solution
 
 KisanSetu provides a common digital platform where farmers can:
 
@@ -37,38 +55,26 @@ KisanSetu provides a common digital platform where farmers can:
 ## Key Features
 
 ### Farmer Module
-
 - Farmer registration and login
 - Farmer profile management
-- Crop details
-- Quantity declaration
+- Crop details & quantity declaration
 - Procurement center selection
-- Slot booking
-- Digital token generation
+- Slot booking & digital token generation
 - Queue status tracking
-- Booking history
-- Procurement status
-- Notifications
+- Booking history & notifications
 
 ### Procurement Center Module
-
 - Center dashboard
 - Daily slot management
-- Farmer queue management
+- Farmer queue management & verification
 - Token management
-- Farmer verification
 - Procurement status updates
-- Daily capacity management
-- Queue monitoring
+- Daily capacity management & queue monitoring
 
 ### Admin Module
-
-- Manage farmers
-- Manage procurement centers
-- Manage crops
+- Manage farmers, procurement centers, and crops
 - Manage slots
-- Monitor bookings
-- Monitor procurement activity
+- Monitor bookings and procurement activity
 - View system statistics
 - Manage users and permissions
 
@@ -76,8 +82,7 @@ KisanSetu provides a common digital platform where farmers can:
 
 KisanSetu reduces physical crowding by assigning farmers specific procurement slots.
 
-Example flow:
-
+```
 Farmer Registration
         ↓
 Crop & Quantity Details
@@ -99,118 +104,37 @@ Verification & Weighing
 Procurement Completed
         ↓
 Payment Status
+```
 
 ## Technology Stack
 
-### Frontend
+**Frontend:** React, Vite, TypeScript
 
-- React
-- Vite
-- TypeScript
+**Backend:** Node.js, Express.js, TypeScript, REST API
 
-### Backend
+**Database:** PostgreSQL, Prisma ORM (managed via Neon)
 
-- Node.js
-- Express.js
-- TypeScript
-- REST API
+**Authentication & Security:** JWT Authentication, bcrypt password hashing, Role-based access control, Zod validation, CORS protection, Environment variables for sensitive configuration
 
-### Database
+### API
 
-- PostgreSQL
-- Prisma ORM
+Backend provides REST APIs for: Authentication, Farmers, Procurement Centers, Crops, Slot Management, Bookings, Queue Management, Procurement Tracking, Notifications
 
-### Authentication & Security
+### Security Practices
 
-- JWT Authentication
-- bcrypt password hashing
-- Role-based access control
-- Zod validation
-- CORS protection
-- Environment variables for sensitive configuration
+- Password hashing using bcrypt
+- JWT-based authentication
+- Input validation using Zod
+- Role-based authorization
+- CORS configuration
+- Environment-based secrets
+- Database access through Prisma ORM
 
-API
-
-Backend provides REST APIs for:
-
-Authentication
-Farmers
-Procurement Centers
-Crops
-Slot Management
-Bookings
-Queue Management
-Procurement Tracking
-Notifications
-Security
-
-KisanSetu follows basic application security practices:
-
-Password hashing using bcrypt
-JWT-based authentication
-Input validation using Zod
-Role-based authorization
-CORS configuration
-Environment-based secrets
-Database access through Prisma ORM
-Future Scope
-
-KisanSetu can be expanded with:
-
-Multi-language support
-Hindi and regional-language interface
-SMS notifications
-WhatsApp notifications
-Mobile application
-GPS-based procurement center discovery
-AI-based queue prediction
-Demand and arrival forecasting
-Crop quality prediction
-Digital payment integration
-Government procurement API integration
-Real-time center capacity monitoring
-Analytics dashboard
-Multi-state deployment
-Live Demo
-
-Frontend:
-https://kisan-setu-liard.vercel.app
-
-Database
-
-KisanSetu uses PostgreSQL with Prisma ORM.
-
-Database management is handled through Neon.
-
-Never expose database credentials, connection strings, API keys, or other secrets in README or public repositories.
-
-Vision
-
-KisanSetu aims to create a simpler and more transparent procurement experience for farmers.
-
-Instead of farmers spending hours waiting in physical queues, KisanSetu enables them to plan their visit through digital scheduling and real-time queue information.
-
-Less waiting. Better planning. Smarter procurement.
-
-Project Information
-
-Project: KisanSetu
-Problem Statement ID: 26032
-Theme: Smart Automation
-Category: Software
-Focus: Agricultural Procurement Scheduling & Queue Management
-
-Repository
-
-https://github.com/mbajiya047/KisanSetu
-
-License
-
-This project is licensed under the MIT License.
+> Never expose database credentials, connection strings, API keys, or other secrets in this README or in the public repository.
 
 ## Project Structure
 
-```text
+```
 KisanSetu/
 │
 ├── api/
@@ -229,5 +153,33 @@ KisanSetu/
 ├── vercel.json
 ├── .gitignore
 └── README.md
+```
 
+## Future Scope
 
+- Multi-language support (Hindi & regional languages)
+- SMS notifications
+- WhatsApp notifications
+- Mobile application
+- GPS-based procurement center discovery
+- AI-based queue prediction (demand and arrival forecasting)
+- Crop quality prediction
+- Digital payment integration
+- Government procurement API integration
+- Real-time center capacity monitoring
+- Analytics dashboard
+- Multi-state deployment
+
+## Vision
+
+KisanSetu aims to create a simpler and more transparent procurement experience for farmers. Instead of farmers spending hours waiting in physical queues, KisanSetu enables them to plan their visit through digital scheduling and real-time queue information.
+
+**Less waiting. Better planning. Smarter procurement.**
+
+## Repository
+
+https://github.com/mbajiya047/KisanSetu
+
+## License
+
+This project is licensed under the MIT License.
