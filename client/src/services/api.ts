@@ -462,9 +462,32 @@ class ApiClient {
       return await this.request<{ success: boolean; states: any[] }>('/states');
     } catch (err: any) {
       console.warn('getStates fallback:', err.message);
+      const enrichedStates = Object.values(DEFAULT_STATES_DATA).map((st) => ({
+        ...st,
+        districtsCount: st.districts.length,
+        procurementCentersCount: st.districts.length * 3 + 2,
+        activeFarmersCount: 14200 + (st.districts.length * 1200),
+        todayAvailableSlots: 1840 + (st.districts.length * 90),
+        currentQueue: 28,
+        averageWaitMinutes: 25,
+        procurementStatus: 'ACTIVE',
+        supportedCrops: ['Wheat', 'Paddy', 'Mustard', 'Bajra'],
+        config: {
+          procurementMode: 'Decentralized MSP (DCP)',
+          slotDurationMinutes: st.code === 'RJ' ? 30 : 60,
+          dailyCapacityLimitQuintals: 60000,
+          emergencySlotQuotaPercent: 10,
+          seasonName: 'Kharif 2026 / Rabi 2026-27',
+          seasonStartDate: '2026-09-01',
+          seasonEndDate: '2026-11-30',
+          requiredDocuments: ['Aadhaar Card', 'Land Record / Farad', 'Bank Passbook', 'Crop Sowing Certificate (Patwari)'],
+          notificationChannels: ['SMS', 'WhatsApp', 'Push Notification'],
+        },
+      }));
+
       return {
         success: true,
-        states: Object.values(DEFAULT_STATES_DATA),
+        states: enrichedStates,
       };
     }
   }
