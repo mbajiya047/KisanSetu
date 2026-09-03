@@ -470,6 +470,7 @@ router.get('/enam/network-status', async (_req: Request, res: Response) => {
 router.get('/enam/slots/:centerId', async (req: Request, res: Response) => {
   try {
     const { centerId } = req.params;
+    const requestedDate = (req.query.date as string) || new Date().toISOString().split('T')[0];
     let center = await prisma.procurementCenter.findFirst({
       where: {
         OR: [{ id: centerId }, { code: centerId.toUpperCase() }],
@@ -492,9 +493,11 @@ router.get('/enam/slots/:centerId', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Mandi not found' });
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
     const maxCapacity = center.maxDailyFarmers || 200;
-    const localBookings = center.bookings.length || 18;
+    const dayNum = parseInt(requestedDate.split('-')[2] || '15', 10);
+    const dayOffset = Math.max(0, dayNum - 15);
+    const loadMultiplier = Math.max(0.12, 1 - dayOffset * 0.28);
+    const localBookings = Math.round((center.bookings.length || 18) * loadMultiplier);
 
     // e-NAM central slot windows with deterministic dynamic time simulation
     const now = new Date();
@@ -506,32 +509,32 @@ router.get('/enam/slots/:centerId', async (req: Request, res: Response) => {
         window: '07:30 AM - 09:30 AM',
         sessionName: 'Morning Priority Slot (Gate 1 & 2)',
         maxQuota: Math.round(maxCapacity * 0.22),
-        bookedCentralEnam: Math.round(maxCapacity * 0.16),
-        bookedKisanSetu: Math.min(localBookings, Math.round(maxCapacity * 0.05)),
+        bookedCentralEnam: Math.round(maxCapacity * 0.16 * loadMultiplier),
+        bookedKisanSetu: Math.min(localBookings, Math.round(maxCapacity * 0.05 * loadMultiplier)),
         get availableQuota() {
           return Math.max(0, this.maxQuota - (this.bookedCentralEnam + this.bookedKisanSetu));
         },
-        status: currentHour >= 10 ? 'CLOSED' : 'FILLING_FAST',
+        status: (dayOffset === 0 && currentHour >= 10) ? 'CLOSED' : (loadMultiplier > 0.7 ? 'FILLING_FAST' : 'AVAILABLE'),
       },
       {
         id: 'slot-2',
         window: '09:30 AM - 11:30 AM',
         sessionName: 'Peak Morning Weighbridge Intake',
         maxQuota: Math.round(maxCapacity * 0.26),
-        bookedCentralEnam: Math.round(maxCapacity * 0.20),
-        bookedKisanSetu: Math.min(localBookings + 2, Math.round(maxCapacity * 0.06)),
+        bookedCentralEnam: Math.round(maxCapacity * 0.20 * loadMultiplier),
+        bookedKisanSetu: Math.min(localBookings + 2, Math.round(maxCapacity * 0.06 * loadMultiplier)),
         get availableQuota() {
           return Math.max(0, this.maxQuota - (this.bookedCentralEnam + this.bookedKisanSetu));
         },
-        status: currentHour >= 12 ? 'CLOSED' : 'FULL',
+        status: (dayOffset === 0 && currentHour >= 12) ? 'CLOSED' : (loadMultiplier > 0.75 ? 'FULL' : 'AVAILABLE'),
       },
       {
         id: 'slot-3',
         window: '11:30 AM - 01:30 PM',
         sessionName: 'Midday Quality Inspection & Unloading',
         maxQuota: Math.round(maxCapacity * 0.22),
-        bookedCentralEnam: Math.round(maxCapacity * 0.12),
-        bookedKisanSetu: Math.min(localBookings, Math.round(maxCapacity * 0.04)),
+        bookedCentralEnam: Math.round(maxCapacity * 0.12 * loadMultiplier),
+        bookedKisanSetu: Math.min(localBookings, Math.round(maxCapacity * 0.04 * loadMultiplier)),
         get availableQuota() {
           return Math.max(0, this.maxQuota - (this.bookedCentralEnam + this.bookedKisanSetu));
         },
@@ -542,8 +545,8 @@ router.get('/enam/slots/:centerId', async (req: Request, res: Response) => {
         window: '02:30 PM - 04:30 PM',
         sessionName: 'Afternoon Bulk Procurement Session',
         maxQuota: Math.round(maxCapacity * 0.18),
-        bookedCentralEnam: Math.round(maxCapacity * 0.09),
-        bookedKisanSetu: Math.min(localBookings, Math.round(maxCapacity * 0.03)),
+        bookedCentralEnam: Math.round(maxCapacity * 0.09 * loadMultiplier),
+        bookedKisanSetu: Math.min(localBookings, Math.round(maxCapacity * 0.03 * loadMultiplier)),
         get availableQuota() {
           return Math.max(0, this.maxQuota - (this.bookedCentralEnam + this.bookedKisanSetu));
         },
@@ -617,7 +620,7 @@ router.get('/enam/slots/:centerId', async (req: Request, res: Response) => {
         activeGates: center.activeGates,
         dailyCapacityQuintals: center.dailyCapacityQuintals,
       },
-      date: todayStr,
+      date: requestedDate,
       reconciliationMetrics: {
         dailyQuotaFarmers: totalAllocated,
         bookedViaCentralEnam: timeSlots.reduce((acc, s) => acc + s.bookedCentralEnam, 0),

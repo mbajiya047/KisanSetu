@@ -68,7 +68,7 @@ export const SlotBookingPage: React.FC = () => {
         }
       });
 
-      api.getEnamMandiSlots(selectedCenterId).then((res) => {
+      api.getEnamMandiSlots(selectedCenterId, selectedDate).then((res) => {
         if (res.success) {
           setEnamSyncInfo(res);
         }

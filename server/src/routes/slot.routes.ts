@@ -66,7 +66,17 @@ router.get('/available', async (req: Request, res: Response) => {
               { start: '04:00 PM', end: '05:00 PM', max: 20, booked: 1, status: 'AVAILABLE' },
             ];
 
+      const dateStr = String(date);
+      const dayNum = parseInt(dateStr.split('-')[2] || '15', 10);
+      const dayOffset = Math.max(0, dayNum - 15);
+      const loadMultiplier = Math.max(0.12, 1 - dayOffset * 0.28);
+
       for (const tw of timeWindows) {
+        const adjustedBooked = Math.min(tw.max, Math.round(tw.booked * loadMultiplier));
+        let adjustedStatus = 'AVAILABLE';
+        if (adjustedBooked >= tw.max) adjustedStatus = 'FULL';
+        else if (adjustedBooked >= tw.max * 0.7) adjustedStatus = 'FEW_SLOTS';
+
         await prisma.slot.create({
           data: {
             centerId: String(centerId),
@@ -75,8 +85,8 @@ router.get('/available', async (req: Request, res: Response) => {
             startTime: tw.start,
             endTime: tw.end,
             maxFarmers: tw.max,
-            bookedFarmers: tw.booked,
-            status: tw.status,
+            bookedFarmers: adjustedBooked,
+            status: adjustedStatus,
             capacityQuintals: tw.max * 40,
           },
         });
