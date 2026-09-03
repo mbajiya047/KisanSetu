@@ -114,8 +114,11 @@ export const SlotBookingPage: React.FC = () => {
     }
   };
 
-  const getSlotBadge = (status: string, booked: number, max: number) => {
-    const available = Math.max(0, max - booked);
+  const getSlotBadge = (status: string, booked?: number, max?: number) => {
+    const safeMax = typeof max === 'number' && !isNaN(max) && max > 0 ? max : 25;
+    const safeBooked = typeof booked === 'number' && !isNaN(booked) && booked >= 0 ? booked : 0;
+    const available = Math.max(0, safeMax - safeBooked);
+
     switch (status) {
       case 'FULL':
         return (
@@ -124,6 +127,7 @@ export const SlotBookingPage: React.FC = () => {
           </span>
         );
       case 'FEW_SLOTS':
+      case 'FAST_FILLING':
         return (
           <span className="badge-warning text-[10px] uppercase font-bold">
             {t.slotFew} ({available} left)
@@ -434,7 +438,11 @@ export const SlotBookingPage: React.FC = () => {
                       </div>
 
                       <div className="mt-2">
-                        {getSlotBadge(slot.status, slot.bookedFarmers, slot.maxFarmers)}
+                        {getSlotBadge(
+                          slot.status,
+                          slot.bookedFarmers ?? (slot.bookedQuantityQuintals ? Math.round(slot.bookedQuantityQuintals / 20) : undefined),
+                          slot.maxFarmers ?? (slot.maxCapacityQuintals ? Math.round(slot.maxCapacityQuintals / 20) : undefined)
+                        )}
                       </div>
                     </button>
                   );
@@ -475,11 +483,15 @@ export const SlotBookingPage: React.FC = () => {
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div>
                 <span className="text-slate-400 block text-[10px] uppercase">Crop</span>
-                <strong className="text-slate-900 font-bold">Wheat ({quantity} Qtl)</strong>
+                <strong className="text-slate-900 font-bold">
+                  {selectedCrop === 'crop-wheat' ? 'Wheat' : selectedCrop.replace('crop-', '').toUpperCase()} ({quantity} Qtl)
+                </strong>
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px] uppercase">Center</span>
-                <strong className="text-slate-900 font-bold">Sonipat Mandi</strong>
+                <strong className="text-slate-900 font-bold">
+                  {centers.find((c) => c.id === selectedCenterId)?.name || 'Sonipat Mandi'}
+                </strong>
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px] uppercase">Date</span>
@@ -487,7 +499,11 @@ export const SlotBookingPage: React.FC = () => {
               </div>
               <div>
                 <span className="text-slate-400 block text-[10px] uppercase">Time</span>
-                <strong className="text-slate-900 font-bold">10:00 AM - 11:00 AM</strong>
+                <strong className="text-slate-900 font-bold">
+                  {slots.find((s) => s.id === selectedSlotId)
+                    ? `${slots.find((s) => s.id === selectedSlotId)?.startTime} - ${slots.find((s) => s.id === selectedSlotId)?.endTime}`
+                    : '09:00 AM - 10:00 AM'}
+                </strong>
               </div>
             </div>
 
