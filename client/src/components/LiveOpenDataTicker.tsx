@@ -38,6 +38,7 @@ export const LiveOpenDataTicker: React.FC = () => {
   const [customSearchResult, setCustomSearchResult] = useState<any | null>(null);
   const [enamNetwork, setEnamNetwork] = useState<any | null>(null);
   const [selectedEnamCenter, setSelectedEnamCenter] = useState('center-nagaur-main');
+  const [centerWeather, setCenterWeather] = useState<any | null>(null);
   const [enamSlotData, setEnamSlotData] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSearchingWeather, setIsSearchingWeather] = useState(false);
@@ -50,6 +51,17 @@ export const LiveOpenDataTicker: React.FC = () => {
     }, 1000);
     return () => clearInterval(pulseTimer);
   }, []);
+
+  const fetchCenterWeather = async (centerId: string) => {
+    try {
+      const res = await api.getCenterWeatherRadar(centerId);
+      if (res && res.success) {
+        setCenterWeather(res);
+      }
+    } catch (err) {
+      console.warn('Error loading center weather:', err);
+    }
+  };
 
   const fetchEnamSlots = async (centerId: string) => {
     try {
@@ -73,7 +85,10 @@ export const LiveOpenDataTicker: React.FC = () => {
       if (pRes.success && pRes.prices) setPrices(pRes.prices);
       if (netRes.success) setEnamNetwork(netRes);
 
-      await fetchEnamSlots(selectedEnamCenter);
+      await Promise.all([
+        fetchEnamSlots(selectedEnamCenter),
+        fetchCenterWeather(selectedEnamCenter),
+      ]);
 
       // Key agricultural hubs across India
       const keyCenters = [
@@ -101,6 +116,7 @@ export const LiveOpenDataTicker: React.FC = () => {
 
   useEffect(() => {
     fetchIntelligenceData();
+    fetchCenterWeather(selectedEnamCenter);
     // Continuous live synchronization poll every 6 seconds
     const interval = setInterval(() => {
       fetchEnamSlots(selectedEnamCenter);
@@ -222,7 +238,12 @@ export const LiveOpenDataTicker: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('WEATHER')}
+            onClick={() => {
+              setActiveTab('WEATHER');
+              if (centerWeather) {
+                setCustomSearchResult(centerWeather);
+              }
+            }}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
               activeTab === 'WEATHER'
                 ? 'bg-emerald-600 text-white shadow-md'
@@ -231,6 +252,9 @@ export const LiveOpenDataTicker: React.FC = () => {
           >
             <CloudSun className="w-3.5 h-3.5" />
             <span>{language === 'hi' ? 'मौसम रडार' : 'Weather Radar'}</span>
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold">
+              LIVE
+            </span>
           </button>
 
           <button
@@ -248,6 +272,7 @@ export const LiveOpenDataTicker: React.FC = () => {
           <button
             onClick={() => {
               fetchIntelligenceData();
+              fetchCenterWeather(selectedEnamCenter);
               if (searchQuery.trim()) handlePlaceSearch();
             }}
             title="Refresh Live e-NAM Stream"
@@ -316,6 +341,7 @@ export const LiveOpenDataTicker: React.FC = () => {
               onClick={() => {
                 setSelectedEnamCenter(hub.id);
                 fetchEnamSlots(hub.id);
+                fetchCenterWeather(hub.id);
                 if (activeTab === 'WEATHER') {
                   handlePlaceSearch(hub.name);
                 }
@@ -332,6 +358,64 @@ export const LiveOpenDataTicker: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* PERSISTENT LIVE MANDI WEATHER & YARD STATUS STRIP (Always visible for selected center) */}
+      {centerWeather && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/70 via-slate-850 to-slate-900 border border-emerald-500/40 shadow-lg flex flex-wrap items-center justify-between gap-4 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center border ${
+              centerWeather.weather?.isRainAlert
+                ? 'bg-amber-500/20 border-amber-500/30 text-amber-400'
+                : 'bg-emerald-500/20 border-emerald-400/30 text-emerald-400'
+            }`}>
+              {centerWeather.weather?.isRainAlert ? (
+                <CloudRain className="w-5 h-5 animate-pulse" />
+              ) : (
+                <CloudSun className="w-5 h-5" />
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-white">
+                  {language === 'hi' ? 'लाइव मौसम रडार' : 'Live Mandi Weather Radar'}:{' '}
+                  <span className="text-emerald-400 font-extrabold">{centerWeather.centerName}</span>
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                  {centerWeather.weather?.provider || 'OpenWeather API (Live)'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 font-medium mt-0.5 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                <span>{centerWeather.weather?.recommendedAction}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs font-mono">
+            <div className="text-right">
+              <span className="text-xl font-black text-white">{centerWeather.weather?.temperatureC}°C</span>
+              <span className="block text-[10px] text-emerald-400 font-sans font-bold">
+                {centerWeather.weather?.weatherCondition}
+              </span>
+            </div>
+            <div className="border-l border-slate-700 pl-3 space-y-0.5 text-[11px] text-slate-300">
+              <div>💧 Humidity: <strong className="text-white">{centerWeather.weather?.relativeHumidity}%</strong></div>
+              <div>💨 Wind: <strong className="text-white">{centerWeather.weather?.windSpeedKmh} km/h</strong></div>
+              <div>🌧️ Rain Risk: <strong className={centerWeather.weather?.isRainAlert ? 'text-amber-400 font-bold' : 'text-emerald-400'}>{centerWeather.weather?.precipitationProbability}%</strong></div>
+            </div>
+            <button
+              onClick={() => {
+                setActiveTab('WEATHER');
+                setCustomSearchResult(centerWeather);
+              }}
+              className="text-xs font-bold text-emerald-400 hover:text-emerald-300 underline font-sans flex items-center gap-1 ml-1"
+            >
+              <span>{language === 'hi' ? 'विस्तृत रडार' : 'Full Radar'}</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* TAB 1: CENTRAL e-NAM LIVE SLOTS & REAL-TIME QUOTA ENGINE */}
       {activeTab === 'ENAM_SLOTS' && enamSlotData && (
