@@ -12,14 +12,30 @@ router.get('/', async (req: Request, res: Response) => {
     const { stateId, districtId, cropId, search } = req.query;
 
     const whereClause: any = { isOperational: true };
-    if (stateId) whereClause.stateId = String(stateId);
-    if (districtId) whereClause.districtId = String(districtId);
-    if (search) {
+    if (stateId) {
       whereClause.OR = [
-        { name: { contains: String(search) } },
-        { hindiName: { contains: String(search) } },
-        { address: { contains: String(search) } },
+        { stateId: String(stateId) },
+        { state: { id: String(stateId) } },
+        { state: { code: String(stateId).toUpperCase() } },
+        { state: { name: { contains: String(stateId), mode: 'insensitive' } } },
       ];
+    }
+    if (districtId) {
+      whereClause.districtId = String(districtId);
+    }
+    if (search) {
+      const searchConditions = [
+        { name: { contains: String(search), mode: 'insensitive' } },
+        { hindiName: { contains: String(search), mode: 'insensitive' } },
+        { address: { contains: String(search), mode: 'insensitive' } },
+        { district: { name: { contains: String(search), mode: 'insensitive' } } },
+      ];
+      if (whereClause.OR) {
+        whereClause.AND = [{ OR: whereClause.OR }, { OR: searchConditions }];
+        delete whereClause.OR;
+      } else {
+        whereClause.OR = searchConditions;
+      }
     }
 
     const centers = await prisma.procurementCenter.findMany({

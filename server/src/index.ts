@@ -26,12 +26,8 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Request logger & URL normalization for development & Vercel
+// Request logger for development & Vercel
 app.use((req: Request, _res: Response, next: NextFunction) => {
-  const vercelPath = (req.headers['x-matched-path'] || req.headers['x-vercel-matched-path'] || req.headers['x-forwarded-url']) as string | undefined;
-  if (vercelPath && vercelPath.startsWith('/api') && req.url !== vercelPath) {
-    req.url = vercelPath;
-  }
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} (original: ${req.originalUrl})`);
   next();
 });
