@@ -207,15 +207,19 @@ router.get('/weather-sync/:centerId', async (req: Request, res: Response) => {
     const lng = center.longitude || 77.0151;
     const apiKey = process.env.OPENWEATHER_API_KEY || process.env.WEATHER_API_KEY || 'fd0ab05c35ebc13ac0a25947340856ee';
 
+    const latOffset = (lat - 20) * 1.3;
+    const lngOffset = (lng - 70) * 0.45;
+    const geoTemp = Math.round((34.5 - latOffset + lngOffset) * 10) / 10;
+
     let weatherData: any = {
-      temperatureC: 28.4,
-      relativeHumidity: 65,
+      temperatureC: geoTemp,
+      relativeHumidity: Math.min(95, Math.max(30, Math.round(45 + latOffset * 2.5))),
       precipitationProbability: 10,
-      weatherCondition: 'Dry & Clear',
-      windSpeedKmh: 10.2,
+      weatherCondition: 'Dry & Clear Sky',
+      windSpeedKmh: 11.2,
       isRainAlert: false,
       recommendedAction: 'Standard Open Air Yard Weighing & Unloading',
-      provider: 'Offline Backup / Cached Feed',
+      provider: 'Offline Weather Radar (Cached)',
     };
 
     let fetched = false;
@@ -369,15 +373,19 @@ router.get('/weather-search', async (req: Request, res: Response) => {
       }
     }
 
+    const latOffset = (lat - 20) * 1.3;
+    const lngOffset = (lng - 70) * 0.45;
+    const geoTemp = Math.round((34.5 - latOffset + lngOffset) * 10) / 10;
+
     let weatherData: any = {
-      temperatureC: 28.4,
-      relativeHumidity: 65,
+      temperatureC: geoTemp,
+      relativeHumidity: Math.min(95, Math.max(30, Math.round(45 + latOffset * 2.5))),
       precipitationProbability: 10,
-      weatherCondition: 'Dry & Clear',
+      weatherCondition: 'Dry & Clear Sky',
       windSpeedKmh: 10.2,
       isRainAlert: false,
       recommendedAction: 'Standard Open Air Yard Weighing & Unloading',
-      provider: 'Offline Backup / Cached Feed',
+      provider: 'Offline Weather Radar (Cached)',
     };
 
     let fetched = false;

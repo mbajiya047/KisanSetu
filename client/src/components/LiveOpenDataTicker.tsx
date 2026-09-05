@@ -92,10 +92,13 @@ export const LiveOpenDataTicker: React.FC = () => {
 
       // Key agricultural hubs across India
       const keyCenters = [
-        'center-sonipat-main',
         'center-nagaur-main',
         'center-jaipur-surajpole',
+        'center-sikar-main',
+        'center-bikaner-main',
+        'center-jodhpur-mandore',
         'center-kota-main',
+        'center-sonipat-main',
         'center-khanna-main',
         'center-sehore-main',
         'center-lasalgaon-main',
