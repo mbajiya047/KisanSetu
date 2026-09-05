@@ -508,20 +508,27 @@ router.post('/sahayak-chat', async (req: Request, res: Response) => {
       });
     }
 
-    // Check if external Gemini API key is available for general conversational query
+    // Check if external Gemini API key is available for conversational query
     if (geminiApiKey && geminiApiKey !== 'your_gemini_api_key_here') {
       try {
-        const systemPrompt = `You are 'Kisan Sahayak AI' (किसान सहायक), an expert agricultural and mandi assistant for Indian farmers on the KisanSetu platform.
-Keep answers concise, practical, helpful, polite, and encouraging.
-Use bullet points and bold highlights.
-Key platform facts:
-- Official Central 2026-27 MSP Rates: Moong: ₹8,682/Qtl, Mustard: ₹5,950/Qtl, Bajra: ₹2,625/Qtl, Wheat: ₹2,425/Qtl, Gram/Chana: ₹5,650/Qtl, Groundnut: ₹6,783/Qtl, Paddy: ₹2,441/Qtl, Cotton: ₹7,121/Qtl, Soybean: ₹4,892/Qtl, Maize: ₹2,090/Qtl.
-- Major Mandis: Nagaur (Moong ₹8,850, Bajra ₹2,680, Mustard ₹6,180), Jaipur (Wheat ₹2,490, Mustard ₹6,140), Sikar (Bajra ₹2,650, Mustard ₹6,120), Bikaner (Groundnut ₹7,100, Chana ₹5,850), Sonipat (Wheat ₹2,460), Khanna (Wheat ₹2,480).
-- Linked directly to Central Portals: e-NAM (enam.gov.in), Agmarknet (agmarknet.gov.in), and CACP (cacp.dacnet.nic.in).
-- Farmers can book e-Token slots on KisanSetu to bypass long gate queues.
-IMPORTANT: You MUST reply entirely in the user's selected language (${cleanLang === 'en' ? 'English' : 'Hindi (हिंदी)'}). Do NOT mix Hindi and English if English is selected.`;
+        const systemPrompt = `You are 'Kisan Sahayak AI' (किसान सहायक), the official AI assistant on KisanSetu, directly integrated with the Government of India National Agriculture Market portal (https://enam.gov.in) and CACP official MSP benchmarks.
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+CRITICAL INSTRUCTIONS:
+1. DIRECT & PRECISE: Answer ONLY what the user asked. Never give long advance speeches, unwanted lectures, or extra rambling commentary. Keep it clear, concise, and to the point.
+2. CITATION: Explicitly cite https://enam.gov.in as the source of live mandi prices.
+3. LANGUAGE: Answer strictly in the requested language (${cleanLang === 'en' ? 'English' : 'Hindi (हिंदी)'}). Do NOT mix Hindi and English when English is requested.
+4. OFFICIAL BENCHMARKS (2026-27):
+- Moong: MSP ₹8,682/Qtl | Nagaur Mandi e-NAM Modal: ₹8,850/Qtl
+- Mustard: MSP ₹5,950/Qtl | Jaipur Muhana Mandi e-NAM Modal: ₹6,140/Qtl | Sikar: ₹6,120/Qtl
+- Wheat: MSP ₹2,425/Qtl | Jaipur Muhana e-NAM Modal: ₹2,490/Qtl | Sonipat: ₹2,460/Qtl | Khanna: ₹2,480/Qtl
+- Bajra: MSP ₹2,625/Qtl | Nagaur Mandi e-NAM Modal: ₹2,680/Qtl | Sikar: ₹2,650/Qtl
+- Gram / Chana: MSP ₹5,650/Qtl | Bikaner Mandi e-NAM Modal: ₹5,850/Qtl
+- Groundnut: MSP ₹6,783/Qtl | Bikaner: ₹7,100/Qtl | Rajkot: ₹6,950/Qtl
+- Paddy: MSP ₹2,441/Qtl | Sonipat: ₹2,540/Qtl | Khanna: ₹3,150/Qtl
+- Cotton: MSP ₹7,121/Qtl | Rajkot: ₹7,350/Qtl
+- Soybean: MSP ₹4,892/Qtl | Kota: ₹5,040/Qtl | Sehore: ₹5,010/Qtl`;
+
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`;
 
         const geminiRes = await fetch(geminiUrl, {
           method: 'POST',
@@ -534,8 +541,8 @@ IMPORTANT: You MUST reply entirely in the user's selected language (${cleanLang 
               },
             ],
             generationConfig: {
-              temperature: 0.3,
-              maxOutputTokens: 600,
+              temperature: 0.15,
+              maxOutputTokens: 2500,
             },
           }),
         });
@@ -546,8 +553,8 @@ IMPORTANT: You MUST reply entirely in the user's selected language (${cleanLang 
           if (generatedText) {
             return res.json({
               success: true,
-              answer: generatedText,
-              source: 'Google Gemini AI (Cloud Augmented)',
+              answer: generatedText.trim(),
+              source: 'Google Gemini 3.6 Flash (e-NAM Gateway)',
               timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             });
           }
