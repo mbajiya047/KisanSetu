@@ -171,12 +171,30 @@ router.get('/mandi-prices', async (req: Request, res: Response) => {
   }
 });
 
+// In-memory weather cache (10 min TTL) to avoid excessive external calls and handle concurrent requests
+interface WeatherCacheEntry {
+  data: any;
+  timestamp: number;
+}
+const weatherCache = new Map<string, WeatherCacheEntry>();
+const WEATHER_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
 /**
- * Live Weather Radar & Shed Risk Assessment (OpenWeather API + Open-Meteo Fallback)
+ * Live Center Weather Radar (OpenWeather API with Open-Meteo Satellite Fallback)
  */
 router.get('/weather-sync/:centerId', async (req: Request, res: Response) => {
   try {
     const { centerId } = req.params;
+    const cacheKey = `center:${centerId}`;
+    const cached = weatherCache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < WEATHER_CACHE_TTL_MS) {
+      return res.json({
+        ...cached.data,
+        cached: true,
+      });
+    }
+
     const center = await prisma.procurementCenter.findUnique({
       where: { id: centerId },
     });
@@ -197,15 +215,15 @@ router.get('/weather-sync/:centerId', async (req: Request, res: Response) => {
       windSpeedKmh: 10.2,
       isRainAlert: false,
       recommendedAction: 'Standard Open Air Yard Weighing & Unloading',
-      provider: 'OpenWeather Live Feed',
+      provider: 'Offline Backup / Cached Feed',
     };
 
     let fetched = false;
 
-    // 1. Try Live OpenWeather API with provided API key
+    // 1. Try Live OpenWeather API with provided API key (6s timeout)
     try {
       const owmUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${apiKey}&units=metric`;
-      const owmRes = await fetch(owmUrl, { signal: AbortSignal.timeout(3000) });
+      const owmRes = await fetch(owmUrl, { signal: AbortSignal.timeout(6000) });
       if (owmRes.ok) {
         const owmJson = (await owmRes.json()) as OpenWeatherApiResponse;
         const main = owmJson.main || {};
@@ -227,19 +245,19 @@ router.get('/weather-sync/:centerId', async (req: Request, res: Response) => {
           recommendedAction: isRain
             ? 'Move grain unloading to Covered Shed Bay 1 & 2'
             : 'Standard Open Air Yard Weighing & Unloading',
-          provider: 'OpenWeather API (Active)',
+          provider: 'OpenWeather API (Live)',
         };
         fetched = true;
       }
     } catch (owmErr) {
-      // fallback
+      // fallback to Open-Meteo
     }
 
-    // 2. Resilient Open-Meteo fallback if OpenWeather key is propagating / activating
+    // 2. Resilient Open-Meteo fallback if OpenWeather key is propagating / unavailable
     if (!fetched) {
       try {
         const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&hourly=precipitation_probability&forecast_days=1`;
-        const response = await fetch(weatherUrl, { signal: AbortSignal.timeout(3000) });
+        const response = await fetch(weatherUrl, { signal: AbortSignal.timeout(6000) });
 
         if (response.ok) {
           const json = (await response.json()) as OpenMeteoWeatherResponse;
@@ -257,22 +275,28 @@ router.get('/weather-sync/:centerId', async (req: Request, res: Response) => {
               hourlyProb > 30
                 ? 'Move grain unloading to Covered Shed Bay 1 & 2'
                 : 'Standard Open Air Yard Weighing & Unloading',
-            provider: 'Open-Meteo Live Satellite Feed',
+            provider: 'Open-Meteo Satellite Feed',
           };
+          fetched = true;
         }
       } catch (meteoErr) {
         console.log('Weather fallback used:', meteoErr);
       }
     }
 
-    return res.json({
+    const payload = {
       success: true,
       centerId: center.id,
       centerName: center.name,
       coordinates: { latitude: lat, longitude: lng },
       weather: weatherData,
       lastUpdated: new Date().toISOString(),
-    });
+    };
+
+    // Cache the response
+    weatherCache.set(cacheKey, { data: payload, timestamp: Date.now() });
+
+    return res.json(payload);
   } catch (error) {
     console.error('Error syncing weather:', error);
     return res.status(500).json({ success: false, message: 'Weather sync error' });
@@ -290,16 +314,26 @@ router.get('/weather-search', async (req: Request, res: Response) => {
     }
 
     const q = query.trim().toLowerCase();
+    const cacheKey = `search:${q}`;
+    const cached = weatherCache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < WEATHER_CACHE_TTL_MS) {
+      return res.json({
+        ...cached.data,
+        cached: true,
+      });
+    }
+
     const apiKey = process.env.OPENWEATHER_API_KEY || process.env.WEATHER_API_KEY || 'fd0ab05c35ebc13ac0a25947340856ee';
 
-    // 1. Check local Mandis and Districts first (prioritize exact/name/district matches)
+    // 1. Check local Mandis and Districts first (case-insensitive search in PostgreSQL)
     let matchedCenter = await prisma.procurementCenter.findFirst({
       where: {
         OR: [
-          { name: { contains: q } },
-          { hindiName: { contains: q } },
-          { district: { name: { contains: q } } },
-          { district: { hindiName: { contains: q } } },
+          { name: { contains: q, mode: 'insensitive' } },
+          { hindiName: { contains: q, mode: 'insensitive' } },
+          { district: { name: { contains: q, mode: 'insensitive' } } },
+          { district: { hindiName: { contains: q, mode: 'insensitive' } } },
         ],
       },
     });
@@ -307,7 +341,7 @@ router.get('/weather-search', async (req: Request, res: Response) => {
     if (!matchedCenter) {
       matchedCenter = await prisma.procurementCenter.findFirst({
         where: {
-          address: { contains: q },
+          address: { contains: q, mode: 'insensitive' },
         },
       });
     }
@@ -320,7 +354,7 @@ router.get('/weather-search', async (req: Request, res: Response) => {
     if (!matchedCenter) {
       try {
         const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=en&format=json`;
-        const geoRes = await fetch(geoUrl, { signal: AbortSignal.timeout(3000) });
+        const geoRes = await fetch(geoUrl, { signal: AbortSignal.timeout(6000) });
         if (geoRes.ok) {
           const geoJson = (await geoRes.json()) as OpenMeteoGeoResponse;
           if (geoJson.results && geoJson.results.length > 0) {
@@ -343,15 +377,15 @@ router.get('/weather-search', async (req: Request, res: Response) => {
       windSpeedKmh: 10.2,
       isRainAlert: false,
       recommendedAction: 'Standard Open Air Yard Weighing & Unloading',
-      provider: 'Live Agricultural Weather Radar',
+      provider: 'Offline Backup / Cached Feed',
     };
 
     let fetched = false;
 
-    // Try OpenWeatherMap
+    // Try OpenWeatherMap (6s timeout)
     try {
       const owmUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${apiKey}&units=metric`;
-      const owmRes = await fetch(owmUrl, { signal: AbortSignal.timeout(3000) });
+      const owmRes = await fetch(owmUrl, { signal: AbortSignal.timeout(6000) });
       if (owmRes.ok) {
         const owmJson = (await owmRes.json()) as OpenWeatherApiResponse;
         const main = owmJson.main || {};
@@ -373,7 +407,7 @@ router.get('/weather-search', async (req: Request, res: Response) => {
           recommendedAction: isRain
             ? 'Move grain unloading to Covered Shed Bay 1 & 2'
             : 'Standard Open Air Yard Weighing & Unloading',
-          provider: 'OpenWeather API (Active)',
+          provider: 'OpenWeather API (Live)',
         };
         fetched = true;
       }
@@ -385,7 +419,7 @@ router.get('/weather-search', async (req: Request, res: Response) => {
     if (!fetched) {
       try {
         const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&hourly=precipitation_probability&forecast_days=1`;
-        const response = await fetch(weatherUrl, { signal: AbortSignal.timeout(3000) });
+        const response = await fetch(weatherUrl, { signal: AbortSignal.timeout(6000) });
         if (response.ok) {
           const json = (await response.json()) as OpenMeteoWeatherResponse;
           const current = json.current || {};
@@ -404,13 +438,14 @@ router.get('/weather-search', async (req: Request, res: Response) => {
                 : 'Standard Open Air Yard Weighing & Unloading',
             provider: 'Open-Meteo Satellite Feed',
           };
+          fetched = true;
         }
       } catch (meteoErr) {
         // fallback
       }
     }
 
-    return res.json({
+    const payload = {
       success: true,
       query,
       centerId: matchedCenter?.id || null,
@@ -418,10 +453,15 @@ router.get('/weather-search', async (req: Request, res: Response) => {
       coordinates: { latitude: lat, longitude: lng },
       weather: weatherData,
       lastUpdated: new Date().toISOString(),
-    });
+    };
+
+    // Cache the response
+    weatherCache.set(cacheKey, { data: payload, timestamp: Date.now() });
+
+    return res.json(payload);
   } catch (error) {
     console.error('Error in weather search:', error);
-    return res.status(500).json({ success: false, message: 'Server error' });
+    return res.status(500).json({ success: false, message: 'Weather search failed' });
   }
 });
 

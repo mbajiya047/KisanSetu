@@ -316,6 +316,9 @@ export const LiveOpenDataTicker: React.FC = () => {
               onClick={() => {
                 setSelectedEnamCenter(hub.id);
                 fetchEnamSlots(hub.id);
+                if (activeTab === 'WEATHER') {
+                  handlePlaceSearch(hub.name);
+                }
               }}
               className={`px-3 py-1.5 rounded-xl border text-[11px] font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
                 selectedEnamCenter === hub.id
@@ -650,10 +653,12 @@ export const LiveOpenDataTicker: React.FC = () => {
                 return (
                   <div
                     key={idx}
-                    className={`p-4 rounded-2xl border transition-all space-y-3 ${
+                    onClick={() => setCustomSearchResult(w)}
+                    title="Click to view full radar breakdown"
+                    className={`p-4 rounded-2xl border transition-all space-y-3 cursor-pointer ${
                       isRain
-                        ? 'bg-amber-950/30 border-amber-500/40'
-                        : 'bg-slate-800/60 border-slate-700/80 hover:border-emerald-500/50'
+                        ? 'bg-amber-950/30 border-amber-500/40 hover:border-amber-400'
+                        : 'bg-slate-800/60 border-slate-700/80 hover:border-emerald-500/80 hover:bg-slate-800/90'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">

@@ -802,10 +802,21 @@ class ApiClient {
     try {
       return await this.request<{ success: boolean; centerName: string; coordinates: any; weather: any; lastUpdated: string }>(`/open-data/weather-sync/${centerId}`);
     } catch {
+      const knownHubs: Record<string, { name: string; lat: number; lng: number }> = {
+        'center-sonipat-main': { name: 'Sonipat Main Grain Mandi', lat: 28.9931, lng: 77.0151 },
+        'center-nagaur-main': { name: 'Nagaur Krishi Upaj Mandi Samiti', lat: 27.2070, lng: 73.7423 },
+        'center-jaipur-surajpole': { name: 'Jaipur Surajpole Mandi Samiti', lat: 26.9124, lng: 75.7873 },
+        'center-kota-main': { name: 'Kota Bhamashah Mandi', lat: 25.1767, lng: 75.8573 },
+        'center-khanna-main': { name: 'Khanna Asia Grain Market', lat: 30.7046, lng: 76.2166 },
+        'center-sehore-main': { name: 'Sehore Krishi Upaj Mandi', lat: 23.2031, lng: 77.0844 },
+        'center-lasalgaon-main': { name: 'Lasalgaon Onion APMC Mandi', lat: 20.1462, lng: 74.2307 },
+      };
+      const hub = knownHubs[centerId] || { name: centerId, lat: 28.6139, lng: 77.2090 };
       return {
         success: true,
-        centerName: 'Sonipat Main Grain Mandi',
-        coordinates: { latitude: 28.9931, longitude: 77.0151 },
+        centerId,
+        centerName: hub.name,
+        coordinates: { latitude: hub.lat, longitude: hub.lng },
         weather: {
           temperatureC: 30.7,
           relativeHumidity: 58,
@@ -814,7 +825,7 @@ class ApiClient {
           windSpeedKmh: 11.2,
           isRainAlert: false,
           recommendedAction: 'Standard Open Air Yard Weighing & Unloading',
-          provider: 'OpenWeather API (Live)',
+          provider: 'Offline Backup (Cached)',
         },
         lastUpdated: new Date().toISOString(),
       };
@@ -847,7 +858,7 @@ class ApiClient {
           windSpeedKmh: 12.0,
           isRainAlert: false,
           recommendedAction: 'Safe for open yard transit; covered tarpaulins recommended as precaution.',
-          provider: 'OpenWeather API (Live)',
+          provider: 'Offline Backup (Cached)',
         },
         lastUpdated: new Date().toISOString(),
       };
