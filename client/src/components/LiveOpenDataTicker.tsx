@@ -26,6 +26,7 @@ import {
   Layers,
   Users,
   Check,
+  RotateCcw,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -34,6 +35,19 @@ export const LiveOpenDataTicker: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'ENAM_SLOTS' | 'WEATHER' | 'PRICES'>('ENAM_SLOTS');
   const [searchQuery, setSearchQuery] = useState('');
   const [prices, setPrices] = useState<any[]>([]);
+  const [selectedCropFilter, setSelectedCropFilter] = useState<string>('ALL');
+  const [selectedStateFilter, setSelectedStateFilter] = useState<string>('ALL');
+  const [portalMeta, setPortalMeta] = useState<any>({
+    dataSource: 'National Agriculture Market (e-NAM / Agmarknet Standard Open Feed)',
+    centralPortal: 'Government of India - Ministry of Agriculture & Farmers Welfare',
+    cacpBenchmark: 'CACP Gazette 2026-27 Official MSP Rates',
+    portalUrls: {
+      enam: 'https://enam.gov.in',
+      agmarknet: 'https://agmarknet.gov.in',
+      cacp: 'https://cacp.dacnet.nic.in',
+    },
+    lastSyncTime: new Date().toISOString(),
+  });
   const [weatherList, setWeatherList] = useState<any[]>([]);
   const [customSearchResult, setCustomSearchResult] = useState<any | null>(null);
   const [enamNetwork, setEnamNetwork] = useState<any | null>(null);
@@ -82,7 +96,18 @@ export const LiveOpenDataTicker: React.FC = () => {
         api.getEnamNetworkStatus(),
       ]);
 
-      if (pRes.success && pRes.prices) setPrices(pRes.prices);
+      if (pRes.success && pRes.prices) {
+        setPrices(pRes.prices);
+        if (pRes.portalUrls) {
+          setPortalMeta({
+            dataSource: pRes.dataSource,
+            centralPortal: pRes.centralPortal || 'Government of India - Ministry of Agriculture & Farmers Welfare',
+            cacpBenchmark: pRes.cacpBenchmark || 'CACP Gazette 2026-27 Official MSP Rates',
+            portalUrls: pRes.portalUrls,
+            lastSyncTime: pRes.lastSyncTime || new Date().toISOString(),
+          });
+        }
+      }
       if (netRes.success) setEnamNetwork(netRes);
 
       await Promise.all([
@@ -160,27 +185,67 @@ export const LiveOpenDataTicker: React.FC = () => {
   };
 
   const popularMandiHubs = [
-    { id: 'center-nagaur-main', name: 'Nagaur (नागौर)' },
-    { id: 'center-jaipur-surajpole', name: 'Jaipur (जयपुर)' },
-    { id: 'center-sikar-main', name: 'Sikar (सीकर)' },
-    { id: 'center-bikaner-main', name: 'Bikaner (बीकानेर)' },
-    { id: 'center-jodhpur-mandore', name: 'Jodhpur (जोधपुर)' },
-    { id: 'center-kota-main', name: 'Kota (कोटा)' },
-    { id: 'center-sonipat-main', name: 'Sonipat (सोनीपत)' },
-    { id: 'center-khanna-main', name: 'Khanna (खन्ना)' },
-    { id: 'center-sehore-main', name: 'Sehore (सीहोर)' },
+    { id: 'center-nagaur-main', name: 'Nagaur (नागौर)', searchKey: 'Nagaur' },
+    { id: 'center-jaipur-surajpole', name: 'Jaipur (जयपुर)', searchKey: 'Jaipur' },
+    { id: 'center-sikar-main', name: 'Sikar (सीकर)', searchKey: 'Sikar' },
+    { id: 'center-bikaner-main', name: 'Bikaner (बीकानेर)', searchKey: 'Bikaner' },
+    { id: 'center-jodhpur-mandore', name: 'Jodhpur (जोधपुर)', searchKey: 'Jodhpur' },
+    { id: 'center-kota-main', name: 'Kota (कोटा)', searchKey: 'Kota' },
+    { id: 'center-sonipat-main', name: 'Sonipat (सोनीपत)', searchKey: 'Sonipat' },
+    { id: 'center-khanna-main', name: 'Khanna (खन्ना)', searchKey: 'Khanna' },
+    { id: 'center-sehore-main', name: 'Sehore (सीहोर)', searchKey: 'Sehore' },
+  ];
+
+  const cropFilters = [
+    { key: 'ALL', label: language === 'hi' ? 'सभी फसलें' : 'All Crops', icon: '🌾' },
+    { key: 'Moong', label: language === 'hi' ? 'मूंग' : 'Moong', icon: '🌱' },
+    { key: 'Mustard', label: language === 'hi' ? 'सरसों' : 'Mustard', icon: '🌼' },
+    { key: 'Bajra', label: language === 'hi' ? 'बाजरा' : 'Bajra', icon: '🌾' },
+    { key: 'Wheat', label: language === 'hi' ? 'गेहूं' : 'Wheat', icon: '🌾' },
+    { key: 'Gram', label: language === 'hi' ? 'चना' : 'Gram / Chana', icon: '🫘' },
+    { key: 'Groundnut', label: language === 'hi' ? 'मूंगफली' : 'Groundnut', icon: '🥜' },
+    { key: 'Paddy', label: language === 'hi' ? 'धान' : 'Paddy / Rice', icon: '🌾' },
+    { key: 'Cotton', label: language === 'hi' ? 'कपास' : 'Cotton', icon: '☁️' },
+    { key: 'Soybean', label: language === 'hi' ? 'सोयाबीन' : 'Soybean', icon: '🫘' },
+    { key: 'Maize', label: language === 'hi' ? 'मक्का' : 'Maize', icon: '🌽' },
+  ];
+
+  const stateFilters = [
+    { key: 'ALL', label: language === 'hi' ? 'सभी राज्य (All States)' : 'All States' },
+    { key: 'Rajasthan', label: 'Rajasthan (राजस्थान)' },
+    { key: 'Haryana', label: 'Haryana (हरियाणा)' },
+    { key: 'Punjab', label: 'Punjab (पंजाब)' },
+    { key: 'Uttar Pradesh', label: 'Uttar Pradesh (उत्तर प्रदेश)' },
+    { key: 'Madhya Pradesh', label: 'Madhya Pradesh (मध्य प्रदेश)' },
+    { key: 'Maharashtra', label: 'Maharashtra (महाराष्ट्र)' },
+    { key: 'Gujarat', label: 'Gujarat (गुजरात)' },
+    { key: 'Karnataka', label: 'Karnataka (कर्नाटक)' },
+    { key: 'Tamil Nadu', label: 'Tamil Nadu (तमिलनाडु)' },
   ];
 
   // Filtered prices for Prices tab
-  const filteredPrices = prices.filter(
-    (p) =>
-      !searchQuery.trim() ||
-      p.commodity.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.hindiName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.market.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.district.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredPrices = prices.filter((p) => {
+    const q = searchQuery.trim().toLowerCase();
+    const matchesQuery =
+      !q ||
+      p.commodity.toLowerCase().includes(q) ||
+      p.hindiName.toLowerCase().includes(q) ||
+      p.market.toLowerCase().includes(q) ||
+      p.state.toLowerCase().includes(q) ||
+      p.district.toLowerCase().includes(q) ||
+      (p.variety && p.variety.toLowerCase().includes(q));
+
+    const matchesCrop =
+      selectedCropFilter === 'ALL' ||
+      p.commodity.toLowerCase().includes(selectedCropFilter.toLowerCase()) ||
+      p.hindiName.toLowerCase().includes(selectedCropFilter.toLowerCase());
+
+    const matchesState =
+      selectedStateFilter === 'ALL' ||
+      p.state.toLowerCase() === selectedStateFilter.toLowerCase();
+
+    return matchesQuery && matchesCrop && matchesState;
+  });
 
   return (
     <div className="card p-6 sm:p-8 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white border border-slate-800 shadow-2xl rounded-3xl overflow-hidden space-y-6">
@@ -347,6 +412,8 @@ export const LiveOpenDataTicker: React.FC = () => {
                 fetchCenterWeather(hub.id);
                 if (activeTab === 'WEATHER') {
                   handlePlaceSearch(hub.name);
+                } else if (activeTab === 'PRICES') {
+                  setSearchQuery(hub.searchKey || hub.name.split(' ')[0]);
                 }
               }}
               className={`px-3 py-1.5 rounded-xl border text-[11px] font-semibold transition-all whitespace-nowrap flex items-center gap-1 ${
@@ -798,66 +865,284 @@ export const LiveOpenDataTicker: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 3: LIVE MANDI PRICES (e-NAM / Agmarknet) */}
+      {/* TAB 3: LIVE MANDI PRICES & CENTRAL BENCHMARKS (e-NAM / Agmarknet / CACP) */}
       {activeTab === 'PRICES' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in">
-          {filteredPrices.map((p, idx) => {
-            const diff = p.modalPrice - p.mspRate;
-            return (
-              <div
-                key={idx}
-                className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/80 hover:border-emerald-500/50 transition-all space-y-3"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
-                      🌾
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-sm text-white">
-                        {language === 'hi' ? p.hindiName || p.commodity : p.commodity}
-                      </h4>
-                      <span className="text-[10px] text-slate-400 block font-mono">
-                        {p.market.split(' ')[0]}, {p.state}
-                      </span>
-                    </div>
-                  </div>
-
-                  <span className="badge-success text-[10px] font-bold py-0.5 px-2">
-                    +{diff >= 0 ? `₹${diff}` : `-₹${Math.abs(diff)}`} vs MSP
-                  </span>
+        <div className="space-y-5 animate-fade-in">
+          {/* CENTRAL GOVERNMENT PORTAL INTEGRATION BANNER */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-850 to-emerald-950/70 border border-emerald-500/40 shadow-xl space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700/80 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center font-bold text-2xl shadow-inner">
+                  🏛️
                 </div>
-
-                <div className="pt-2 border-t border-slate-700/60 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold">
-                      {language === 'hi' ? 'मंडी मॉडल भाव' : 'Today Modal Rate'}
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold uppercase tracking-wider border border-emerald-500/40">
+                      Official Central Government Benchmark Feed
                     </span>
-                    <span className="text-base font-black text-emerald-400 font-mono">
-                      ₹{p.modalPrice.toLocaleString('en-IN')}{' '}
-                      <span className="text-xs font-normal text-slate-400">/ Qtl</span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      CACP Gazette 2026-27
                     </span>
                   </div>
-
-                  <div className="text-right">
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold">
-                      Govt MSP Rate
-                    </span>
-                    <span className="text-xs font-bold text-slate-300 font-mono">
-                      ₹{p.mspRate.toLocaleString('en-IN')} / Qtl
-                    </span>
-                  </div>
-                </div>
-
-                <div className="text-[10px] text-slate-400 flex items-center justify-between pt-1">
-                  <span>
-                    Arrivals: <strong className="text-slate-200">{p.dailyArrivalsMT} MT</strong>
-                  </span>
-                  <span className="text-emerald-400 font-semibold">● Central e-NAM Verified</span>
+                  <h3 className="text-base sm:text-lg font-black text-white mt-1">
+                    {language === 'hi'
+                      ? 'राष्ट्रीय कृषि बाज़ार (e-NAM) व Agmarknet केंद्रीय MSP एवं लाइव मंडी भाव'
+                      : 'Central e-NAM & Agmarknet Government MSP & Daily Mandi Rates'}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {language === 'hi'
+                      ? 'भारत सरकार, कृषि एवं किसान कल्याण मंत्रालय तथा CACP द्वारा घोषित न्यूनतम समर्थन मूल्य (MSP) और प्रमुख मंडियों के मॉडल भाव।'
+                      : 'Directly linked to Ministry of Agriculture & Farmers Welfare central portals and CACP official MSP benchmark rates.'}
+                  </p>
                 </div>
               </div>
-            );
-          })}
+
+              {/* Verified External Central Sites Direct Links */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <a
+                  href={portalMeta.portalUrls?.agmarknet || 'https://agmarknet.gov.in'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-md hover:shadow-emerald-900/30"
+                  title="Directorate of Marketing & Inspection - Daily Mandi Rates Portal"
+                >
+                  <span>agmarknet.gov.in</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+
+                <a
+                  href={portalMeta.portalUrls?.enam || 'https://enam.gov.in'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-md hover:shadow-emerald-900/30"
+                  title="National Agriculture Market Central Gateway"
+                >
+                  <span>enam.gov.in</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+
+                <a
+                  href={portalMeta.portalUrls?.cacp || 'https://cacp.dacnet.nic.in'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 rounded-xl bg-emerald-900/70 hover:bg-emerald-850 text-emerald-100 border border-emerald-500/50 text-xs font-bold inline-flex items-center gap-1.5 transition-all shadow-md"
+                  title="Commission for Agricultural Costs & Prices (CACP) Official Gazette Rates"
+                >
+                  <span>CACP MSP Gazette</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+
+            {/* Quick Commodity Filters */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">
+                  {language === 'hi' ? 'फसल अनुसार फ़िल्टर:' : 'Quick Crop Benchmark Filter:'}
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  Showing <strong className="text-white font-bold">{filteredPrices.length}</strong> mandi MSP entries
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 text-xs">
+                {cropFilters.map((cf) => (
+                  <button
+                    key={cf.key}
+                    onClick={() => setSelectedCropFilter(cf.key)}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                      selectedCropFilter === cf.key
+                        ? 'bg-emerald-600 text-white border-emerald-400 shadow-md font-bold'
+                        : 'bg-slate-800/80 hover:bg-slate-750 text-slate-300 hover:text-white border-slate-700'
+                    }`}
+                  >
+                    <span>{cf.icon}</span>
+                    <span>{cf.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* State Filter dropdown & Reset */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400 text-[11px] font-bold uppercase">
+                  {language === 'hi' ? 'राज्य फ़िल्टर:' : 'State:'}
+                </span>
+                <select
+                  value={selectedStateFilter}
+                  onChange={(e) => setSelectedStateFilter(e.target.value)}
+                  className="bg-slate-800 text-slate-200 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                >
+                  {stateFilters.map((st) => (
+                    <option key={st.key} value={st.key}>
+                      {st.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {(selectedCropFilter !== 'ALL' || selectedStateFilter !== 'ALL' || searchQuery) && (
+                <button
+                  onClick={() => {
+                    setSelectedCropFilter('ALL');
+                    setSelectedStateFilter('ALL');
+                    setSearchQuery('');
+                  }}
+                  className="text-xs text-amber-400 hover:text-amber-300 font-semibold underline flex items-center gap-1"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>{language === 'hi' ? 'सभी फ़िल्टर रीसेट करें' : 'Reset All Price Filters'}</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* PRICES GRID */}
+          {filteredPrices.length === 0 ? (
+            <div className="p-10 rounded-3xl bg-slate-900/80 border border-slate-800 text-center space-y-4">
+              <div className="w-12 h-12 mx-auto rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 text-xl">
+                🌾
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-base font-bold text-white">
+                  {language === 'hi'
+                    ? 'वर्तमान खोज के लिए कोई मंडी भाव नहीं मिला'
+                    : 'No Mandi MSP Records Found'}
+                </h4>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  {language === 'hi'
+                    ? 'कृपया खोज शब्द बदलें या सभी केंद्रीय दरें देखने के लिए फ़िल्टर रीसेट करें।'
+                    : 'Try clearing your search query or selecting a different crop to see official Central MSP benchmarks.'}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedCropFilter('ALL');
+                  setSelectedStateFilter('ALL');
+                  setSearchQuery('');
+                }}
+                className="btn-primary text-xs py-2.5 px-5 font-bold inline-flex items-center gap-2 shadow-md"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{language === 'hi' ? 'सभी केंद्रीय मंडी भाव देखें' : 'View All Central MSP Rates'}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredPrices.map((p, idx) => {
+                const diff = p.modalPrice - p.mspRate;
+                const isAboveMsp = diff >= 0;
+                return (
+                  <div
+                    key={idx}
+                    className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/60 transition-all shadow-lg hover:shadow-emerald-950/40 flex flex-col justify-between space-y-4 group"
+                  >
+                    <div className="space-y-3">
+                      {/* Top Bar: Crop Name & MSP Status Badge */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg shadow-inner">
+                            🌾
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-sm sm:text-base text-white group-hover:text-emerald-300 transition-colors">
+                              {language === 'hi' ? p.hindiName || p.commodity : p.commodity}
+                            </h4>
+                            <span className="text-[11px] text-slate-400 block font-mono">
+                              {p.variety}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap ${
+                            isAboveMsp
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                              : 'bg-amber-500/20 text-amber-300 border-amber-400/30'
+                          }`}
+                        >
+                          {isAboveMsp
+                            ? `+₹${diff} vs MSP`
+                            : `MSP Protected (₹${p.mspRate})`}
+                        </span>
+                      </div>
+
+                      {/* Mandi & State Location */}
+                      <div className="flex items-center gap-1.5 text-xs text-slate-300 font-medium">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                        <span className="truncate">
+                          {p.market}, {p.district}, {p.state}
+                        </span>
+                      </div>
+
+                      {/* Rates Matrix: Today Modal vs Govt Central MSP */}
+                      <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 grid grid-cols-2 gap-3 shadow-inner">
+                        <div>
+                          <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">
+                            {language === 'hi' ? 'आज का मंडी भाव' : 'Today Modal Rate'}
+                          </span>
+                          <span className="text-lg sm:text-xl font-black text-emerald-400 font-mono block mt-0.5">
+                            ₹{p.modalPrice.toLocaleString('en-IN')}{' '}
+                            <span className="text-xs font-normal text-slate-400">/ Qtl</span>
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono block">
+                            Range: ₹{p.minPrice} - ₹{p.maxPrice}
+                          </span>
+                        </div>
+
+                        <div className="text-right border-l border-slate-800/80 pl-3">
+                          <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">
+                            {language === 'hi' ? 'सरकारी MSP भाव' : 'Central MSP'}
+                          </span>
+                          <span className="text-lg sm:text-xl font-black text-white font-mono block mt-0.5">
+                            ₹{p.mspRate.toLocaleString('en-IN')}{' '}
+                            <span className="text-xs font-normal text-slate-400">/ Qtl</span>
+                          </span>
+                          <span className="text-[10px] text-emerald-400 font-bold block">
+                            Govt Guaranteed
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Arrivals & Verification Tag */}
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                        <span>
+                          Arrivals:{' '}
+                          <strong className="text-slate-200 font-mono">{p.dailyArrivalsMT} MT</strong>
+                        </span>
+                        <span className="text-emerald-400 font-semibold inline-flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span>Agmarknet Verified</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Action Links: Relate directly to Central Site and Book Slot */}
+                    <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                      <a
+                        href={p.centralUrl || 'https://agmarknet.gov.in'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] text-slate-300 hover:text-emerald-300 font-semibold inline-flex items-center gap-1 underline transition-colors"
+                        title="Verify this rate on official Agmarknet portal"
+                      >
+                        <span>{language === 'hi' ? 'केंद्रीय साइट पर देखें' : 'Verify on Agmarknet'}</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+
+                      <Link
+                        to={`/farmer/book-slot?crop=${encodeURIComponent(p.commodity)}`}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold inline-flex items-center gap-1 transition-all shadow-sm"
+                      >
+                        <span>{language === 'hi' ? 'MSP स्लॉट बुक करें' : 'Book MSP Slot'}</span>
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

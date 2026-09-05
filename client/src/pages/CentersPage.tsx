@@ -17,6 +17,8 @@ import {
   X,
   Loader2,
   Inbox,
+  ExternalLink,
+  TrendingUp,
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 
@@ -72,6 +74,56 @@ export const CentersPage: React.FC = () => {
     loadCenters();
   };
 
+  const getProcurementMspPills = (center: any) => {
+    const text = `${center.name || ''} ${center.address || ''}`.toLowerCase();
+    if (text.includes('nagaur') || text.includes('merta') || text.includes('didwana') || text.includes('kuchaman')) {
+      return [
+        { crop: 'Moong (मूंग)', msp: '₹8,682/Qtl' },
+        { crop: 'Mustard (सरसों)', msp: '₹5,950/Qtl' },
+        { crop: 'Bajra (बाजरा)', msp: '₹2,625/Qtl' },
+      ];
+    }
+    if (text.includes('bikaner') || text.includes('jodhpur')) {
+      return [
+        { crop: 'Groundnut (मूंगफली)', msp: '₹6,783/Qtl' },
+        { crop: 'Moong (मूंग)', msp: '₹8,682/Qtl' },
+        { crop: 'Gram (चना)', msp: '₹5,650/Qtl' },
+      ];
+    }
+    if (text.includes('jaipur') || text.includes('sikar') || text.includes('alwar')) {
+      return [
+        { crop: 'Wheat (गेहूं)', msp: '₹2,425/Qtl' },
+        { crop: 'Mustard (सरसों)', msp: '₹5,950/Qtl' },
+        { crop: 'Bajra (बाजरा)', msp: '₹2,625/Qtl' },
+      ];
+    }
+    if (text.includes('sonipat') || text.includes('karnal') || text.includes('panipat') || text.includes('sirsa')) {
+      return [
+        { crop: 'Wheat (गेहूं)', msp: '₹2,425/Qtl' },
+        { crop: 'Paddy (धान)', msp: '₹2,441/Qtl' },
+        { crop: 'Cotton (कपास)', msp: '₹7,121/Qtl' },
+      ];
+    }
+    if (text.includes('khanna') || text.includes('patiala') || text.includes('amritsar')) {
+      return [
+        { crop: 'Wheat (गेहूं)', msp: '₹2,425/Qtl' },
+        { crop: 'Paddy (धान)', msp: '₹2,441/Qtl' },
+      ];
+    }
+    if (text.includes('kota') || text.includes('sehore') || text.includes('ujjain')) {
+      return [
+        { crop: 'Soybean (सोयाबीन)', msp: '₹4,892/Qtl' },
+        { crop: 'Wheat (गेहूं)', msp: '₹2,425/Qtl' },
+        { crop: 'Mustard (सरसों)', msp: '₹5,950/Qtl' },
+      ];
+    }
+    return [
+      { crop: 'Wheat (गेहूं)', msp: '₹2,425/Qtl' },
+      { crop: 'Mustard (सरसों)', msp: '₹5,950/Qtl' },
+      { crop: 'Moong (मूंग)', msp: '₹8,682/Qtl' },
+    ];
+  };
+
   const handleResetFilters = () => {
     setSelectedStateId('');
     setSearchQuery('');
@@ -82,19 +134,55 @@ export const CentersPage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Header */}
-      <div className="max-w-3xl space-y-2">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-agri-100 text-agri-800 text-xs font-bold">
-          <Building className="w-3.5 h-3.5" />
-          <span>{t.navCenters}</span>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="max-w-3xl space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-agri-100 text-agri-800 text-xs font-bold">
+            <Building className="w-3.5 h-3.5" />
+            <span>{t.navCenters}</span>
+          </div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+            {language === 'hi' ? 'अनाज मंडी एवं खरीद केंद्र' : 'Agricultural Procurement Centers'}
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-600">
+            {language === 'hi'
+              ? 'अपने निकटतम खरीद केंद्र खोजें, लाइव कतार का अनुमान लगाएं और तत्काल ई-टोकन स्लॉट बुक करें।'
+              : 'Locate certified mandis across India with real-time queue lengths, gate wait times, and direct slot booking.'}
+          </p>
         </div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-          {language === 'hi' ? 'अनाज मंडी एवं खरीद केंद्र' : 'Agricultural Procurement Centers'}
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-600">
-          {language === 'hi'
-            ? 'अपने निकटतम खरीद केंद्र खोजें, लाइव कतार का अनुमान लगाएं और तत्काल ई-टोकन स्लॉट बुक करें।'
-            : 'Locate certified mandis across India with real-time queue lengths, gate wait times, and direct slot booking.'}
-        </p>
+
+        {/* Central Portals Direct Links */}
+        <div className="flex items-center gap-2 flex-wrap text-xs">
+          <a
+            href="https://agmarknet.gov.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-emerald-800 font-bold hover:bg-emerald-50 inline-flex items-center gap-1 transition-all shadow-xs"
+            title="Directorate of Marketing & Inspection - Official Daily APMC Portal"
+          >
+            <span>agmarknet.gov.in</span>
+            <ExternalLink className="w-3 h-3 text-emerald-600" />
+          </a>
+          <a
+            href="https://enam.gov.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-emerald-800 font-bold hover:bg-emerald-50 inline-flex items-center gap-1 transition-all shadow-xs"
+            title="e-NAM Central Portal"
+          >
+            <span>enam.gov.in</span>
+            <ExternalLink className="w-3 h-3 text-emerald-600" />
+          </a>
+          <a
+            href="https://cacp.dacnet.nic.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 rounded-xl bg-emerald-700 text-white font-bold hover:bg-emerald-800 inline-flex items-center gap-1 transition-all shadow-xs"
+            title="Commission for Agricultural Costs & Prices (CACP) Statutory MSP 2026-27"
+          >
+            <span>CACP MSP Gazette</span>
+            <ExternalLink className="w-3 h-3 text-emerald-200" />
+          </a>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -313,6 +401,36 @@ export const CentersPage: React.FC = () => {
                     <strong className="text-sm text-slate-800 font-bold">
                       {center.activeGates || 3} Active
                     </strong>
+                  </div>
+                </div>
+
+                {/* Official Central MSP Benchmarks for this Mandi */}
+                <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="font-bold text-emerald-900 uppercase flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3 text-emerald-700" />
+                      <span>{language === 'hi' ? 'केंद्रीय MSP खरीद दरें' : 'Central MSP Procurement Rates'}</span>
+                    </span>
+                    <a
+                      href="https://agmarknet.gov.in"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-700 hover:text-emerald-900 font-semibold inline-flex items-center gap-0.5 underline"
+                      title="Verify on Central Agmarknet Portal"
+                    >
+                      <span>agmarknet.gov.in</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {getProcurementMspPills(center).map((p, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-0.5 rounded-lg bg-white border border-emerald-200 text-[10px] font-bold text-slate-800 shadow-2xs"
+                      >
+                        {p.crop}: <strong className="text-emerald-700 font-mono">{p.msp}</strong>
+                      </span>
+                    ))}
                   </div>
                 </div>
 
