@@ -219,25 +219,23 @@ async function fetchLiveCityWeather(cityQuery: string, language: string = 'en'):
       text += `• **आर्द्रता (Humidity):** ${humidity}%\n`;
       text += `• **हवा की गति:** ${windSpeed} किमी/घंटा\n`;
       text += `• **बारिश की संभावना:** ${rainProb}%\n\n`;
-      text += `🌾 **मंडी यार्ड एवं कृषि सुरक्षा सलाह:**\n`;
       if (isRainRisk) {
-        text += `⚠️ **बारिश की चेतावनी:** आपके क्षेत्र में वर्षा की संभावना है। खलिहान या परिवहन में अनाज को वॉटरप्रूफ तिरपाल से तुरंत ढकें। मंडी लाते समय किसानसेतु पर **कवर्ड शेड (Covered Shed Bay 1 व 2)** स्लॉट ही बुक करें ताकि फसल में नमी न बढ़े।`;
+        text += `\n⚠️ **फसल सुरक्षा सलाह:** वर्षा की संभावना है। अनाज व फसलों को भीगने से बचाने के लिए सुरक्षित स्थान पर रखें या तिरपाल से ढकें।`;
       } else {
-        text += `✅ **मौसम अनुकूल:** खुले यार्ड में अनाज सुखाने, थ्रेशिंग और मंडी परिवहन के लिए मौसम पूर्णतः उपयुक्त है। नमी 12% के मानक के भीतर रहने से बिना कटौती के त्वरित ई-गेट पास प्राप्त होगा।`;
+        text += `\n✅ **फसल सलाह:** मौसम शुष्क एवं साफ़ है। फसल कटाई व सुखाने के लिए मौसम अनुकूल है।`;
       }
       return { answer: text, weatherData: { city: cityName, temp, humidity, windSpeed, rainProb, isRainRisk } };
     } else {
-      let text = `🌤️ **Live Real-Time Weather Report for ${cityName}${stateName}:**\n\n`;
+      let text = `🌤️ **Live Real-Time Weather for ${cityName}${stateName}:**\n\n`;
       text += `• **Current Temperature:** **${temp}°C** (Feels like ${feelsLike}°C)\n`;
       text += `• **Weather Condition:** ${condition}\n`;
       text += `• **Relative Humidity:** ${humidity}%\n`;
       text += `• **Wind Speed:** ${windSpeed} km/h\n`;
-      text += `• **Precipitation / Rain Probability:** ${rainProb}%\n\n`;
-      text += `🌾 **Mandi Yard & Agricultural Storage Advisory:**\n`;
+      text += `• **Precipitation / Rain Probability:** ${rainProb}%\n`;
       if (isRainRisk) {
-        text += `⚠️ **Precaution (Rain Risk Detected):** Rainfall probability is elevated. Please ensure grain lots are covered with waterproof tarpaulins during transit. When delivering produce to the mandi, reserve a **Covered Shed (Bay 1 or 2)** slot on KisanSetu to protect your harvest from moisture.`;
+        text += `\n⚠️ **Crop Advisory:** Rain probability is elevated. Ensure harvested produce is kept covered with tarpaulins to prevent moisture spoilage.`;
       } else {
-        text += `✅ **Favorable Dry Conditions:** Weather is clear and suitable for open-air yard drying, threshing, and transit. Moisture levels in harvested crops are likely to remain within the permissible 12% MSP threshold for rapid intake.`;
+        text += `\n✅ **Crop Advisory:** Favorable dry weather. Good conditions for harvesting and sun-drying.`;
       }
       return { answer: text, weatherData: { city: cityName, temp, humidity, windSpeed, rainProb, isRainRisk } };
     }
