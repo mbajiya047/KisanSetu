@@ -12,6 +12,7 @@ import procurementRoutes from './routes/procurement.routes';
 import notificationRoutes from './routes/notification.routes';
 import adminRoutes from './routes/admin.routes';
 import openDataRoutes from './routes/openData.routes';
+import aiRoutes from './routes/ai.routes';
 
 dotenv.config();
 
@@ -58,6 +59,7 @@ const registerRoute = (prefix: string) => {
   app.use(`${prefix}/notifications`, notificationRoutes);
   app.use(`${prefix}/admin`, adminRoutes);
   app.use(`${prefix}/open-data`, openDataRoutes);
+  app.use(`${prefix}/ai`, aiRoutes);
 };
 
 registerRoute('/api');

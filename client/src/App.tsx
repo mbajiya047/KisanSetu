@@ -9,6 +9,7 @@ import { Footer } from './components/Footer';
 import { DemoBanner } from './components/DemoBanner';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { SahayakAssistantWidget } from './components/SahayakAssistantWidget';
 
 import { HomePage } from './pages/HomePage';
 import { StatesPage } from './pages/StatesPage';
@@ -157,6 +158,7 @@ export const AppContent: React.FC = () => {
       </main>
       <Footer />
       <NotificationDrawer />
+      <SahayakAssistantWidget />
     </div>
   );
 };
