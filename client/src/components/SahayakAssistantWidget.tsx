@@ -65,6 +65,11 @@ const QUICK_PROMPTS_HI = [
     icon: '📅',
   },
   {
+    label: 'सरकारी योजनाएं (PM-KISAN, बीमा)',
+    query: 'किसानों के लिए प्रमुख सरकारी योजनाएं कौनसी हैं?',
+    icon: '🏛️',
+  },
+  {
     label: 'सीकर में बाजरा भाव',
     query: 'सीकर मंडी में आज बाजरा का क्या भाव है?',
     icon: '🌾',
@@ -81,6 +86,11 @@ const QUICK_PROMPTS_EN = [
     label: 'Nagaur Moong Live Rate',
     query: 'What is today\'s price of Moong in Nagaur Mandi?',
     icon: '🌾',
+  },
+  {
+    label: 'Live Govt Schemes',
+    query: 'What are the live government schemes for farmers?',
+    icon: '🏛️',
   },
   {
     label: 'Jaipur Live Weather & Rain',

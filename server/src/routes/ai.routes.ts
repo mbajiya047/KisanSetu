@@ -366,7 +366,110 @@ async function generateSahayakDomainAnswer(query: string, language: string = 'hi
     }
   }
 
-  // 3. SLOT BOOKING / E-TOKEN PROCESS QUERY
+  // 3. GOVERNMENT SCHEMES QUERY (PM-KISAN, PMFBY, KUSUM, KCC, Soil Health, etc.)
+  const SCHEME_KEYS = [
+    'scheme', 'scheam', 'योजना', 'yojana', 'subsidy', 'सब्सिडी', 'pm kisan', 'pm-kisan',
+    'fasal bima', 'pmfby', 'kcc', 'kisan credit card', 'kusum', 'solar pump', 'सौर पंप',
+    'soil health', 'मृदा स्वास्थ्य', 'tractor subsidy', 'कृषि यंत्र', 'jaivik kheti', 'organic farming', 'bima'
+  ];
+  const isSchemeQuery = SCHEME_KEYS.some((k) => q.includes(k));
+
+  if (isSchemeQuery) {
+    if (q.includes('pm kisan') || q.includes('pm-kisan') || q.includes('सम्मान निधि') || q.includes('samman nidhi')) {
+      return {
+        answer: isHi
+          ? `🏛️ **प्रधानमंत्री किसान सम्मान निधि योजना (PM-KISAN):**\n\n` +
+            `• **आर्थिक लाभ:** पात्र किसान परिवारों को प्रति वर्ष **₹6,000** की वित्तीय सहायता (₹2,000 की 3 समान किस्तों में) सीधे बैंक खाते (DBT) में।\n` +
+            `• **पात्रता:** सभी भूमिधारक किसान परिवार।\n` +
+            `• **अनिवार्य शर्त:** आधार e-KYC एवं बैंक खाता आधार से लिंक।\n` +
+            `• **आधिकारिक पोर्टल:** [https://pmkisan.gov.in](https://pmkisan.gov.in)\n` +
+            `• **हेल्पलाइन:** 155261 / 1800-115-526`
+          : `🏛️ **Pradhan Mantri Kisan Samman Nidhi (PM-KISAN):**\n\n` +
+            `• **Financial Benefit:** **₹6,000 per year** transferred directly via DBT in 3 equal installments of ₹2,000 every 4 months.\n` +
+            `• **Eligibility:** All landholding farmer families across India.\n` +
+            `• **Mandatory Requirement:** Aadhaar-linked bank account and completed e-KYC on the portal.\n` +
+            `• **Official Portal:** [https://pmkisan.gov.in](https://pmkisan.gov.in)\n` +
+            `• **Toll-Free Helpline:** 155261 / 1800-115-526`,
+      };
+    }
+
+    if (q.includes('fasal bima') || q.includes('pmfby') || q.includes('फसल बीमा') || q.includes('insurance') || q.includes('bima')) {
+      return {
+        answer: isHi
+          ? `🛡️ **प्रधानमंत्री फसल बीमा योजना (PMFBY):**\n\n` +
+            `• **सुरक्षा लाभ:** सूखा, बाढ़, ओलावृष्टि, बेमौसम बारिश व कीट रोगों से फसल क्षति पर संपूर्ण वित्तीय मुआवज़ा।\n` +
+            `• **सब्सिडी प्रीमियम दर:** रबी फसल (गेहूं, सरसों, चना) मात्र **1.5%**, खरीफ फसल (मूंग, बाजरा, धान) मात्र **2.0%**, वाणिज्यिक फसल मात्र **5.0%**।\n` +
+            `• **दावा सूचना:** फसल क्षति के 72 घंटे के भीतर क्रॉप इंश्योरेंस ऐप या टोल-फ्री पर सूचना दें।\n` +
+            `• **आधिकारिक पोर्टल:** [https://pmfby.gov.in](https://pmfby.gov.in)\n` +
+            `• **टोल-फ्री हेल्पलाइन:** 14447`
+          : `🛡️ **Pradhan Mantri Fasal Bima Yojana (PMFBY):**\n\n` +
+            `• **Coverage:** Comprehensive crop loss insurance against drought, floods, unseasonal rain, hailstorms, and pests.\n` +
+            `• **Subsidized Premium:** Only **1.5%** for Rabi crops (Wheat/Mustard/Gram), **2.0%** for Kharif crops (Moong/Bajra/Paddy), and **5.0%** for Commercial/Horticultural crops.\n` +
+            `• **Claim Window:** Report damage within 72 hours via the Crop Insurance App or toll-free.\n` +
+            `• **Official Portal:** [https://pmfby.gov.in](https://pmfby.gov.in)\n` +
+            `• **Toll-Free Helpline:** 14447`,
+      };
+    }
+
+    if (q.includes('kusum') || q.includes('solar') || q.includes('सौर') || q.includes('pump') || q.includes('पंप')) {
+      return {
+        answer: isHi
+          ? `☀️ **पीएम कुसुम सौर पंप योजना (PM-KUSUM):**\n\n` +
+            `• **सब्सिडी लाभ:** सोलर कृषि पंप लगाने पर **60% तक सरकारी अनुदान** (30% केंद्र सरकार + 30% राज्य सरकार)।\n` +
+            `• **किसान का हिस्सा:** केवल **10%** लागत। शेष 30% राशि बैंक ऋण द्वारा उपलब्ध।\n` +
+            `• **अतिरिक्त आय:** अतिरिक्त सौर बिजली विद्युत डिस्कॉम को बेचकर किसान नियमित आय प्राप्त कर सकते हैं।\n` +
+            `• **आधिकारिक पोर्टल:** [https://pmkusum.mnre.gov.in](https://pmkusum.mnre.gov.in)\n` +
+            `• **हेल्पलाइन:** 1800-180-3333`
+          : `☀️ **PM-KUSUM (Solar Agriculture Pump Scheme):**\n\n` +
+            `• **Subsidy Level:** Up to **60% government subsidy** (30% Central + 30% State Govt) for standalone solar irrigation pumps (3HP to 10HP) or solarizing tube-wells.\n` +
+            `• **Farmer Share:** Only **10%** upfront capital; remaining 30% can be financed through bank loans.\n` +
+            `• **Extra Income:** Feed surplus solar electricity back into the grid for guaranteed payments.\n` +
+            `• **Official Portal:** [https://pmkusum.mnre.gov.in](https://pmkusum.mnre.gov.in)\n` +
+            `• **Toll-Free Helpline:** 1800-180-3333`,
+      };
+    }
+
+    if (q.includes('kcc') || q.includes('credit card') || q.includes('क्रेडिट कार्ड')) {
+      return {
+        answer: isHi
+          ? `💳 **किसान क्रेडिट कार्ड योजना (KCC):**\n\n` +
+            `• **ऋण सीमा:** खेती व पशुपालन हेतु **₹3,00,000** तक का सस्ता संस्थागत ऋण।\n` +
+            `• **प्रभावी ब्याज दर:** समय पर भुगतान करने पर मात्र **4% वार्षिक** (3% ब्याज अनुदान प्रोत्साहन)।\n` +
+            `• **बिना गारंटी:** ₹1.60 लाख तक के ऋण पर कोई ज़मीन बंधक रखने की आवश्यकता नहीं।\n` +
+            `• **आवेदन:** किसी भी नज़दीकी बैंक शाखा या कॉमन सर्विस सेंटर (CSC) पर जाएं।`
+          : `💳 **Kisan Credit Card (KCC) Scheme:**\n\n` +
+            `• **Loan Limit:** Institutional credit up to **₹3,00,000** for crop cultivation, dairy, and allied farming needs.\n` +
+            `• **Effective Interest Rate:** Concessional 7%, reduced to **4% per annum** with timely repayment incentive (3% interest subvention).\n` +
+            `• **Collateral-Free:** Zero collateral needed for loans up to ₹1.60 Lakh.\n` +
+            `• **Official Portal:** [https://myscheme.gov.in](https://myscheme.gov.in) (Apply at any rural or commercial bank)`,
+      };
+    }
+
+    // General Schemes Overview
+    return {
+      answer: isHi
+        ? `🏛️ **किसानों के लिए भारत सरकार की प्रमुख सक्रिय योजनाएं (Live Schemes):**\n\n` +
+          `1. **पीएम किसान सम्मान निधि:** प्रति वर्ष ₹6,000 सीधे बैंक खाते में (3 किस्तों में)। ([pmkisan.gov.in](https://pmkisan.gov.in))\n` +
+          `2. **प्रधानमंत्री फसल बीमा योजना (PMFBY):** प्राकृतिक आपदा पर मात्र 1.5-2% प्रीमियम पर संपूर्ण सुरक्षा। ([pmfby.gov.in](https://pmfby.gov.in))\n` +
+          `3. **पीएम कुसुम सौर पंप योजना:** 60% सरकारी सब्सिडी पर खेत में सोलर पंप। ([pmkusum.mnre.gov.in](https://pmkusum.mnre.gov.in))\n` +
+          `4. **किसान क्रेडिट कार्ड (KCC):** मात्र 4% ब्याज दर पर ₹3 लाख तक का सस्ता ऋण।\n` +
+          `5. **राष्ट्रीय कृषि बाजार (e-NAM):** पारदर्शी मंडी व्यापार व सरकारी MSP दरें। ([enam.gov.in](https://enam.gov.in))\n` +
+          `6. **कृषि यंत्रीकरण अनुदान (SMAM):** ट्रैक्टर व कृषि यंत्रों पर 40-50% तक सब्सिडी। ([agrimachinery.nic.in](https://agrimachinery.nic.in))\n` +
+          `7. **मृदा स्वास्थ्य कार्ड:** खेत की मिट्टी की निःशुल्क जांच व उचित खाद सलाह। ([soilhealth.dac.gov.in](https://soilhealth.dac.gov.in))\n\n` +
+          `📌 किसी भी विशेष योजना के बारे में विस्तार से जानने के लिए उसका नाम लिखकर पूछें!`
+        : `🏛️ **Major Live Central Government Agricultural Schemes for Farmers:**\n\n` +
+          `1. **PM-KISAN:** ₹6,000/year direct cash support in 3 equal installments. ([pmkisan.gov.in](https://pmkisan.gov.in))\n` +
+          `2. **PM Fasal Bima Yojana (PMFBY):** Comprehensive crop insurance at 1.5% - 2% subsidized premium. ([pmfby.gov.in](https://pmfby.gov.in))\n` +
+          `3. **PM-KUSUM:** Up to 60% government subsidy for solar irrigation pumps. ([pmkusum.mnre.gov.in](https://pmkusum.mnre.gov.in))\n` +
+          `4. **Kisan Credit Card (KCC):** Low-interest crop loan up to ₹3 Lakh at effective 4% rate.\n` +
+          `5. **National Agriculture Market (e-NAM):** Transparent online mandi trade & statutory MSP. ([enam.gov.in](https://enam.gov.in))\n` +
+          `6. **SMAM Machinery Subsidy:** 40% - 50% subsidy on tractors and farm implements. ([agrimachinery.nic.in](https://agrimachinery.nic.in))\n` +
+          `7. **Soil Health Card Scheme:** Free farm soil testing across 12 nutrients. ([soilhealth.dac.gov.in](https://soilhealth.dac.gov.in))\n\n` +
+          `📌 You can ask about any specific scheme above for eligibility and application details!`,
+    };
+  }
+
+  // 4. SLOT BOOKING / E-TOKEN PROCESS QUERY
   const isSlotQuery = q.includes('स्लॉट') || q.includes('slot') || q.includes('बुक') || q.includes('book') || q.includes('टोकन') || q.includes('token') || q.includes('गेट पास') || q.includes('gate pass');
   if (isSlotQuery) {
     if (isHi) {
