@@ -25,7 +25,10 @@ import {
   Key,
   CalendarCheck2,
   FileSpreadsheet,
+  AlertTriangle,
+  LogOut,
 } from 'lucide-react';
+import { LogoutRequiredModal } from '../components/LogoutRequiredModal';
 
 export const LoginPage: React.FC = () => {
   const { user, isAuthenticated, logout, loginWithPhoneAndOtp, setAuthSession } = useAuth();
@@ -35,6 +38,27 @@ export const LoginPage: React.FC = () => {
 
   // 3 Separate Login Modes: FARMER, ADMIN_OFFICER, SUPER_ADMIN
   const [loginMode, setLoginMode] = useState<'FARMER' | 'ADMIN_OFFICER' | 'SUPER_ADMIN'>('FARMER');
+
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [pendingTargetName, setPendingTargetName] = useState('');
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+
+  const getDashboardRoute = () => {
+    if (!user) return '/login';
+    switch (user.role) {
+      case 'SUPER_ADMIN':
+        return '/admin';
+      case 'STATE_ADMIN':
+        return '/state-admin';
+      case 'DISTRICT_ADMIN':
+        return '/district-admin';
+      case 'MANDI_OFFICER':
+        return '/officer/dashboard';
+      case 'FARMER':
+      default:
+        return '/farmer/dashboard';
+    }
+  };
 
   useEffect(() => {
     const roleParam = searchParams.get('role');
@@ -66,15 +90,45 @@ export const LoginPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // 1. Farmer: Send OTP
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-    if (!phone || phone.length !== 10) {
-      setErrorMsg('Please enter a valid 10-digit mobile number');
-      return;
+  // Tab switcher with logout guard
+  const handleTabClick = (mode: 'FARMER' | 'ADMIN_OFFICER' | 'SUPER_ADMIN', labelEn: string, labelHi: string) => {
+    const label = language === 'hi' ? labelHi : labelEn;
+
+    if (user) {
+      const isSameRole =
+        (mode === 'FARMER' && user.role === 'FARMER') ||
+        (mode === 'ADMIN_OFFICER' && ['MANDI_OFFICER', 'DISTRICT_ADMIN', 'STATE_ADMIN'].includes(user.role)) ||
+        (mode === 'SUPER_ADMIN' && user.role === 'SUPER_ADMIN');
+
+      if (!isSameRole) {
+        setPendingTargetName(label);
+        setPendingAction(() => () => {
+          setLoginMode(mode);
+          setSearchParams({ role: mode });
+          setErrorMsg('');
+        });
+        setIsLogoutModalOpen(true);
+        return;
+      }
     }
 
+    setLoginMode(mode);
+    setSearchParams({ role: mode });
+    setErrorMsg('');
+  };
+
+  const handleConfirmLogout = () => {
+    logout();
+    setIsLogoutModalOpen(false);
+    if (pendingAction) {
+      const action = pendingAction;
+      setPendingAction(null);
+      action();
+    }
+  };
+
+  // 1. Farmer: Send OTP (with account guard)
+  const executeSendOtp = async () => {
     setIsLoading(true);
     try {
       const res = await api.sendOtp(phone);
@@ -89,10 +143,30 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  // 1. Farmer: Verify OTP
-  const handleVerifyOtp = async (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    if (!phone || phone.length !== 10) {
+      setErrorMsg('Please enter a valid 10-digit mobile number');
+      return;
+    }
+
+    if (user) {
+      if (user.role !== 'FARMER' || user.phone !== phone) {
+        setPendingTargetName(language === 'hi' ? `किसान पोर्टल (+91 ${phone})` : `Farmer Portal (+91 ${phone})`);
+        setPendingAction(() => () => {
+          executeSendOtp();
+        });
+        setIsLogoutModalOpen(true);
+        return;
+      }
+    }
+
+    executeSendOtp();
+  };
+
+  // 1. Farmer: Verify OTP (with account guard)
+  const executeVerifyOtp = async () => {
     setIsLoading(true);
     try {
       const { isNewUser } = await loginWithPhoneAndOtp(phone, otp);
@@ -108,21 +182,24 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  // 2. Mandi Officer & Admin: Official Email + Password Login
-  const handleAdminLogin = async (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!adminEmail.trim()) {
-      setErrorMsg('Please enter your official government email');
+    if (user && (user.role !== 'FARMER' || user.phone !== phone)) {
+      setPendingTargetName(language === 'hi' ? `किसान खाता (+91 ${phone})` : `Farmer Account (+91 ${phone})`);
+      setPendingAction(() => () => {
+        executeVerifyOtp();
+      });
+      setIsLogoutModalOpen(true);
       return;
     }
 
-    if (!adminPassword.trim()) {
-      setErrorMsg('Please enter your authorized password');
-      return;
-    }
+    executeVerifyOtp();
+  };
 
+  // 2. Mandi Officer & Admin: Official Email + Password Login (with account guard)
+  const executeAdminLogin = async () => {
     setIsLoading(true);
     try {
       const res = await api.officialLogin(adminEmail.trim(), adminPassword.trim());
@@ -145,7 +222,54 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  // 3. Super Admin: National Command Authority Login
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+
+    if (!adminEmail.trim()) {
+      setErrorMsg('Please enter your official government email');
+      return;
+    }
+
+    if (!adminPassword.trim()) {
+      setErrorMsg('Please enter your authorized password');
+      return;
+    }
+
+    if (user) {
+      const isSameAccount =
+        ['MANDI_OFFICER', 'DISTRICT_ADMIN', 'STATE_ADMIN'].includes(user.role) &&
+        (user as any).email?.toLowerCase() === adminEmail.trim().toLowerCase();
+
+      if (!isSameAccount) {
+        setPendingTargetName(language === 'hi' ? `अधिकारी पोर्टल (${adminEmail})` : `Officer Account (${adminEmail})`);
+        setPendingAction(() => () => {
+          executeAdminLogin();
+        });
+        setIsLogoutModalOpen(true);
+        return;
+      }
+    }
+
+    executeAdminLogin();
+  };
+
+  // 3. Super Admin: National Command Authority Login (with account guard)
+  const executeSuperAdminLogin = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.officialLogin(superAdminEmail.trim(), superAdminKey.trim());
+      if (res.success && res.token && res.user) {
+        setAuthSession(res.token, res.user);
+        navigate('/admin');
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Super Admin authorization failed. Access restricted to authorized national personnel.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSuperAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -160,18 +284,21 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const res = await api.officialLogin(superAdminEmail.trim(), superAdminKey.trim());
-      if (res.success && res.token && res.user) {
-        setAuthSession(res.token, res.user);
-        navigate('/admin');
+    if (user) {
+      const isSameAccount =
+        user.role === 'SUPER_ADMIN' && (user as any).email?.toLowerCase() === superAdminEmail.trim().toLowerCase();
+
+      if (!isSameAccount) {
+        setPendingTargetName(language === 'hi' ? 'राष्ट्रीय सुपर एडमिन' : 'National Super Admin Portal');
+        setPendingAction(() => () => {
+          executeSuperAdminLogin();
+        });
+        setIsLogoutModalOpen(true);
+        return;
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Super Admin authorization failed. Access restricted to authorized national personnel.');
-    } finally {
-      setIsLoading(false);
     }
+
+    executeSuperAdminLogin();
   };
 
   return (
@@ -194,16 +321,55 @@ export const LoginPage: React.FC = () => {
             </p>
           </div>
 
+          {/* Active Session Warning Banner */}
+          {user && (
+            <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 space-y-3 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-amber-100 text-amber-700 flex-shrink-0 mt-0.5">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+                <div className="space-y-1 text-xs">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-bold text-sm text-slate-900">
+                      {language === 'hi' ? 'सक्रिय खाता पहले से लॉग इन है' : 'Active Account Already Logged In'}
+                    </p>
+                    <span className="text-[10px] font-bold bg-amber-200/80 text-amber-950 px-2 py-0.5 rounded-full">
+                      {user.role}
+                    </span>
+                  </div>
+                  <p className="text-slate-600">
+                    {language === 'hi'
+                      ? `आप वर्तमान में ${user.name} के रूप में लॉग इन हैं। किसी अन्य खाते में लॉगिन करने से पहले वर्तमान खाते से लॉगआउट करना अनिवार्य है।`
+                      : `You are signed in as ${user.name}. To log in with a different account or portal, please log out first.`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  className="text-xs py-2 px-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center gap-1.5 shadow-sm transition-all"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>{language === 'hi' ? 'वर्तमान खाते से लॉगआउट करें' : 'Log Out Current Account'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate(getDashboardRoute())}
+                  className="text-xs py-2 px-3.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold transition-all"
+                >
+                  <span>{language === 'hi' ? 'डैशबोर्ड पर वापस जाएं' : 'Go to Active Dashboard'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* 3 SEPARATE LOGIN TABS */}
           <div className="grid grid-cols-3 p-1 rounded-2xl bg-slate-100 border border-slate-200 text-xs font-bold gap-1">
             {/* Tab 1: Farmer */}
             <button
               type="button"
-              onClick={() => {
-                setLoginMode('FARMER');
-                setSearchParams({ role: 'FARMER' });
-                setErrorMsg('');
-              }}
+              onClick={() => handleTabClick('FARMER', 'Farmer Portal', 'किसान पोर्टल')}
               className={`py-2.5 px-2 rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 text-center ${
                 loginMode === 'FARMER'
                   ? 'bg-emerald-700 text-white shadow-md'
@@ -219,11 +385,7 @@ export const LoginPage: React.FC = () => {
             {/* Tab 2: Mandi Officer & Admin */}
             <button
               type="button"
-              onClick={() => {
-                setLoginMode('ADMIN_OFFICER');
-                setSearchParams({ role: 'ADMIN_OFFICER' });
-                setErrorMsg('');
-              }}
+              onClick={() => handleTabClick('ADMIN_OFFICER', 'Officer / Admin', 'अधिकारी / एडमिन')}
               className={`py-2.5 px-2 rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 text-center ${
                 loginMode === 'ADMIN_OFFICER'
                   ? 'bg-blue-800 text-white shadow-md'
@@ -239,11 +401,7 @@ export const LoginPage: React.FC = () => {
             {/* Tab 3: Super Admin */}
             <button
               type="button"
-              onClick={() => {
-                setLoginMode('SUPER_ADMIN');
-                setSearchParams({ role: 'SUPER_ADMIN' });
-                setErrorMsg('');
-              }}
+              onClick={() => handleTabClick('SUPER_ADMIN', 'Super Admin', 'सुपर एडमिन')}
               className={`py-2.5 px-2 rounded-xl transition-all flex flex-col sm:flex-row items-center justify-center gap-1 text-center ${
                 loginMode === 'SUPER_ADMIN'
                   ? 'bg-slate-950 text-amber-400 shadow-md ring-1 ring-amber-500/40'
@@ -616,6 +774,18 @@ export const LoginPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Logout Required Modal */}
+      <LogoutRequiredModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => {
+          setIsLogoutModalOpen(false);
+          setPendingTargetName('');
+          setPendingAction(null);
+        }}
+        targetPortalName={pendingTargetName}
+        onConfirmLogout={handleConfirmLogout}
+      />
     </div>
   );
 };
